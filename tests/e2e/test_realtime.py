@@ -43,9 +43,9 @@ def main():
         end = time.time() + 20
         found = False
         while time.time() < end:
-            toast_count = page_h.locator('.fixed.left-1\\/2.top-4 > div').count()
+            toast_count = page_h.locator('[data-testid="toast"]').count()
             if toast_count > 0:
-                txt = page_h.locator('.fixed.left-1\\/2.top-4 > div').first.text_content()
+                txt = page_h.locator('[data-testid="toast"]').first.text_content()
                 log("H", f"✅ 토스트 발견: {txt}")
                 found = True
                 break
