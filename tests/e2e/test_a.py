@@ -108,8 +108,8 @@ def main():
         end = time.time() + 12
         toast_seen = False
         while time.time() < end:
-            if page_h.locator('.fixed.left-1\\/2.top-4 > div').count() > 0:
-                txt = page_h.locator('.fixed.left-1\\/2.top-4 > div').first.text_content()
+            if page_h.locator('[data-testid="toast"]').count() > 0:
+                txt = page_h.locator('[data-testid="toast"]').first.text_content()
                 log("H", f"✅ Realtime 토스트: {txt}")
                 toast_seen = True
                 shot(page_h, "A-08-husband-realtime-toast")
