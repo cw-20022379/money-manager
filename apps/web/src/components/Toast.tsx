@@ -8,6 +8,11 @@ interface Ctx {
 
 const ToastContext = createContext<Ctx | null>(null);
 
+const VISIBLE = 4;          // 동시에 보이는 최대 stack 깊이
+const STEP_Y = 8;           // 한 단계 뒤로 갈수록 위로 밀리는 px
+const STEP_SCALE = 0.04;    // 한 단계 뒤로 갈수록 작아지는 비율
+const STEP_OPACITY = 0.22;  // 한 단계 뒤로 갈수록 흐려지는 비율
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const idRef = useRef(0);
@@ -18,22 +23,56 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 5000);
   }, []);
 
+  // dev 환경에서만 E2E가 토스트를 직접 트리거할 수 있도록 노출
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as unknown as { __pushToast?: typeof push }).__pushToast = push;
+    }
+  }, [push]);
+
+  // 최신이 0번. 그 뒤로 갈수록 stack 안쪽
+  const stack = [...items].reverse();
+
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      <div className="fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2">
-        {items.map((t) => (
-          <div
-            key={t.id}
-            className={`rounded-full border px-4 py-2 text-sm shadow-lg ${
-              t.tone === 'warn'
-                ? 'border-warn bg-warn/10 text-warn'
-                : 'border-teal bg-bg/95 text-teal'
-            }`}
-          >
-            {t.text}
-          </div>
-        ))}
+      {/* BottomNav(~64px) 위에 위치. h-0 컨테이너 + absolute 자식이 위로 쌓임 */}
+      <div className="pointer-events-none fixed bottom-20 left-0 right-0 z-50 flex justify-center">
+        <div className="relative h-0 w-[min(420px,calc(100vw-2rem))]">
+          {stack.map((t, idx) => {
+            if (idx >= VISIBLE) return null;
+            const opacity = idx === 0 ? 1 : Math.max(1 - idx * STEP_OPACITY, 0.3);
+            return (
+              <div
+                key={t.id}
+                data-testid="toast"
+                data-toast-depth={idx}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  transform: `translateY(${-idx * STEP_Y}px) scale(${1 - idx * STEP_SCALE})`,
+                  transformOrigin: 'bottom center',
+                  opacity,
+                  zIndex: 100 - idx,
+                  transition: 'transform 180ms ease, opacity 180ms ease',
+                }}
+                className="pointer-events-auto flex justify-center"
+              >
+                <span
+                  className={`max-w-full truncate rounded-full border px-4 py-2 text-sm shadow-lg ${
+                    t.tone === 'warn'
+                      ? 'border-warn bg-bg/95 text-warn'
+                      : 'border-teal bg-bg/95 text-teal'
+                  }`}
+                >
+                  {t.text}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </ToastContext.Provider>
   );
