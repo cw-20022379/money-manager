@@ -7,8 +7,8 @@
     height: 100%;
   }
   body {
-    background: #0f1419;
-    color: #e6edf3;
+    background: #f7f7f7;
+    color: #2c2c2c;
     font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     /* 모바일 더블탭 줌 차단 */
@@ -22,5 +22,43 @@
   }
   li::marker {
     content: '';
+  }
+}
+
+@layer components {
+  /* 카카오뱅크 스타일 카드 */
+  .kb-card {
+    @apply bg-panel rounded-3xl shadow-card p-5;
+  }
+  .kb-card-yellow {
+    @apply bg-kakao rounded-3xl shadow-kakao p-5;
+  }
+  /* 인풋 스타일 */
+  .kb-input {
+    @apply w-full rounded-2xl border border-line bg-panel2 px-4 py-3 text-sm text-teal placeholder:text-dim focus:border-kakao focus:outline-none focus:ring-2 focus:ring-kakao/30;
+  }
+  /* 셀렉트 스타일 */
+  .kb-select {
+    @apply w-full rounded-2xl border border-line bg-panel2 px-4 py-3 text-sm text-teal focus:border-kakao focus:outline-none focus:ring-2 focus:ring-kakao/30;
+  }
+  /* 기본 버튼 */
+  .kb-btn {
+    @apply rounded-2xl bg-kakao px-5 py-3 text-sm font-bold text-kakao-dark shadow-kakao transition-all hover:brightness-95 active:scale-95 disabled:opacity-50;
+  }
+  .kb-btn-outline {
+    @apply rounded-2xl border-2 border-line px-5 py-3 text-sm font-semibold text-navy transition-all hover:border-kakao active:scale-95;
+  }
+  .kb-btn-danger {
+    @apply rounded-2xl border-2 border-bad/30 bg-bad/5 px-5 py-3 text-sm font-semibold text-bad transition-all active:scale-95;
+  }
+  /* 세그먼트 컨트롤 */
+  .kb-seg-bar {
+    @apply flex gap-1 rounded-2xl bg-panel2 p-1 text-sm;
+  }
+  .kb-seg-active {
+    @apply flex-1 rounded-xl bg-kakao py-2 text-center text-sm font-bold text-kakao-dark shadow-sm;
+  }
+  .kb-seg-inactive {
+    @apply flex-1 rounded-xl py-2 text-center text-sm font-medium text-dim;
   }
 }
