@@ -9,7 +9,8 @@
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": []
+    "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/sw.ts"]
 }
