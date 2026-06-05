@@ -14,6 +14,7 @@ import { cardRoutes } from './routes/cards.js';
 import { flowRoutes } from './routes/flows.js';
 import { graphRoutes } from './routes/graph.js';
 import { historyRoutes } from './routes/history.js';
+import { notificationRoutes } from './routes/notifications.js';
 
 const app = Fastify({
   logger: { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss' } } },
@@ -37,6 +38,7 @@ await app.register(cardRoutes);
 await app.register(flowRoutes);
 await app.register(graphRoutes);
 await app.register(historyRoutes);
+await app.register(notificationRoutes);
 
 app.setErrorHandler((err, _req, reply) => {
   app.log.error({ err }, 'unhandled');
