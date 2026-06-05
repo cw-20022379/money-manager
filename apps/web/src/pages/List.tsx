@@ -3,25 +3,31 @@ import { api } from '../lib/api.js';
 import { krw } from '../lib/format.js';
 import { CATEGORY_LABEL, type Category } from '@ffn/shared';
 import { Modal } from '../components/Modal.js';
-import { AccountForm } from '../features/AccountForm.js';
-import { CardForm } from '../features/CardForm.js';
-import { FlowForm } from '../features/FlowForm.js';
+import { AccountForm, type AccountInitial } from '../features/AccountForm.js';
+import { CardForm, type CardInitial } from '../features/CardForm.js';
+import { FlowForm, type FlowInitial } from '../features/FlowForm.js';
+import { DeleteConfirm } from '../features/DeleteConfirm.js';
 import { useToast } from '../components/Toast.js';
 
 type Tab = 'flows' | 'accounts' | 'cards';
-type ModalType = null | 'flow' | 'account' | 'card';
 
-interface Flow {
-  id: string; merchant_name: string; amount_krw: number | null; schedule_day: number;
-  category: Category; is_draft: boolean; amount_is_variable: boolean;
-  source_card_id: string | null; source_account_id: string | null;
+interface Flow extends FlowInitial {}
+interface Account extends AccountInitial {}
+interface Card extends CardInitial {
+  payment_due_day: number | null;
 }
-interface Account { id: string; institution_name: string; nickname: string; balance_krw: number | null }
-interface Card { id: string; issuer_name: string; product_name: string; payment_due_day: number | null }
+
+type EditState =
+  | { kind: 'new'; type: Tab }
+  | { kind: 'edit-flow'; flow: Flow }
+  | { kind: 'edit-account'; account: Account }
+  | { kind: 'edit-card'; card: Card }
+  | { kind: 'delete'; endpoint: string; label: string; version: number }
+  | null;
 
 export function List() {
   const [tab, setTab] = useState<Tab>('flows');
-  const [modal, setModal] = useState<ModalType>(null);
+  const [edit, setEdit] = useState<EditState>(null);
   const [flows, setFlows] = useState<Flow[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
@@ -46,9 +52,26 @@ export function List() {
     return () => window.removeEventListener('ffn:data-changed', handler);
   }, [refresh]);
 
-  function onSaved(kind: '계좌' | '카드' | '정기지출') {
-    setModal(null);
-    toast.push(`${kind}을(를) 저장했어요`);
+  // sessionStorage로 전달된 "특정 flow 편집" 요청 (P6 인터럽트 복귀)
+  useEffect(() => {
+    const draftId = sessionStorage.getItem('ffn:edit-flow');
+    if (!draftId || flows.length === 0) return;
+    const target = flows.find((f) => f.id === draftId);
+    if (target) {
+      setTab('flows');
+      setEdit({ kind: 'edit-flow', flow: target });
+      sessionStorage.removeItem('ffn:edit-flow');
+    }
+  }, [flows]);
+
+  function onSaved(kind: string) {
+    setEdit(null);
+    toast.push(`${kind} 저장 완료`);
+    refresh();
+  }
+  function onDeleted() {
+    setEdit(null);
+    toast.push(`해지 완료`);
     refresh();
   }
 
@@ -61,16 +84,18 @@ export function List() {
       </div>
 
       {tab === 'flows' && (
-        <FlowList flows={flows} cards={cards} accounts={accounts} />
+        <FlowList flows={flows} cards={cards} accounts={accounts}
+          onTap={(f) => setEdit({ kind: 'edit-flow', flow: f })} />
       )}
       {tab === 'accounts' && (
         <div className="space-y-2">
           {accounts.length === 0 && <Empty>계좌가 비어있어요. + 버튼으로 등록하세요.</Empty>}
           {accounts.map((a) => (
-            <div key={a.id} className="rounded-xl border border-line bg-panel p-3">
+            <button key={a.id} onClick={() => setEdit({ kind: 'edit-account', account: a })}
+              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
               <div className="text-sm">{a.institution_name} · <span className="text-teal">{a.nickname}</span></div>
               <div className="mt-1 text-xs text-dim">잔액 {krw(a.balance_krw)}</div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -78,39 +103,86 @@ export function List() {
         <div className="space-y-2">
           {cards.length === 0 && <Empty>카드가 비어있어요.</Empty>}
           {cards.map((c) => (
-            <div key={c.id} className="rounded-xl border border-line bg-panel p-3">
+            <button key={c.id} onClick={() => setEdit({ kind: 'edit-card', card: c })}
+              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
               <div className="text-sm">{c.issuer_name} · <span className="text-teal">{c.product_name}</span></div>
               {c.payment_due_day && (
                 <div className="mt-1 text-xs text-dim">결제일 매월 {c.payment_due_day}일</div>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
 
       <button
-        onClick={() => {
-          if (tab === 'flows') setModal('flow');
-          if (tab === 'accounts') setModal('account');
-          if (tab === 'cards') setModal('card');
-        }}
+        onClick={() => setEdit({ kind: 'new', type: tab })}
         className="fixed bottom-20 right-6 z-30 rounded-full bg-teal px-5 py-3 text-bg shadow-lg"
       >+ 새로 등록</button>
 
-      {modal === 'account' && (
-        <Modal title="🏦 계좌 등록" onClose={() => setModal(null)}>
+      {edit?.kind === 'new' && edit.type === 'accounts' && (
+        <Modal title="🏦 계좌 등록" onClose={() => setEdit(null)}>
           <AccountForm onDone={() => onSaved('계좌')} />
         </Modal>
       )}
-      {modal === 'card' && (
-        <Modal title="💳 카드 등록" onClose={() => setModal(null)}>
+      {edit?.kind === 'new' && edit.type === 'cards' && (
+        <Modal title="💳 카드 등록" onClose={() => setEdit(null)}>
           <CardForm onDone={() => onSaved('카드')} />
         </Modal>
       )}
-      {modal === 'flow' && (
-        <Modal title="💸 정기지출 등록" onClose={() => setModal(null)}>
+      {edit?.kind === 'new' && edit.type === 'flows' && (
+        <Modal title="💸 정기지출 등록" onClose={() => setEdit(null)}>
           <FlowForm onDone={() => onSaved('정기지출')} />
         </Modal>
+      )}
+
+      {edit?.kind === 'edit-account' && (
+        <Modal title="🏦 계좌 수정" onClose={() => setEdit(null)}>
+          <AccountForm initial={edit.account}
+            onDone={() => onSaved('계좌')}
+            onDelete={() => setEdit({
+              kind: 'delete',
+              endpoint: `/api/accounts/${edit.account.id}`,
+              label: `${edit.account.institution_name} ${edit.account.nickname}`,
+              version: edit.account.version,
+            })}
+          />
+        </Modal>
+      )}
+      {edit?.kind === 'edit-card' && (
+        <Modal title="💳 카드 수정" onClose={() => setEdit(null)}>
+          <CardForm initial={edit.card}
+            onDone={() => onSaved('카드')}
+            onDelete={() => setEdit({
+              kind: 'delete',
+              endpoint: `/api/cards/${edit.card.id}`,
+              label: `${edit.card.issuer_name} ${edit.card.product_name}`,
+              version: edit.card.version,
+            })}
+          />
+        </Modal>
+      )}
+      {edit?.kind === 'edit-flow' && (
+        <Modal title="💸 정기지출 수정" onClose={() => setEdit(null)}>
+          <FlowForm initial={edit.flow}
+            onDone={() => onSaved('정기지출')}
+            onDelete={() => setEdit({
+              kind: 'delete',
+              endpoint: `/api/flows/${edit.flow.id}`,
+              label: edit.flow.merchant_name,
+              version: edit.flow.version,
+            })}
+          />
+        </Modal>
+      )}
+      {edit?.kind === 'delete' && (
+        <DeleteConfirm
+          title="해지 확인"
+          subjectLabel={edit.label}
+          endpoint={edit.endpoint}
+          version={edit.version}
+          onDone={onDeleted}
+          onCancel={() => setEdit(null)}
+        />
       )}
     </div>
   );
@@ -118,10 +190,8 @@ export function List() {
 
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex-1 rounded-md py-2 ${active ? 'bg-bg text-teal' : 'text-dim'}`}
-    >
+    <button onClick={onClick}
+      className={`flex-1 rounded-md py-2 ${active ? 'bg-bg text-teal' : 'text-dim'}`}>
       {children}
     </button>
   );
@@ -135,11 +205,12 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FlowList({ flows, cards, accounts }: { flows: Flow[]; cards: Card[]; accounts: Account[] }) {
+function FlowList({ flows, cards, accounts, onTap }: {
+  flows: Flow[]; cards: Card[]; accounts: Account[]; onTap: (f: Flow) => void;
+}) {
   if (flows.length === 0)
     return <Empty>정기지출이 비어있어요. + 버튼으로 첫 항목을 등록하세요.</Empty>;
 
-  // 초안 먼저, 그 다음 amount 내림차순
   const sorted = [...flows].sort((a, b) => {
     if (a.is_draft !== b.is_draft) return a.is_draft ? -1 : 1;
     return (b.amount_krw ?? 0) - (a.amount_krw ?? 0);
@@ -157,7 +228,8 @@ function FlowList({ flows, cards, accounts }: { flows: Flow[]; cards: Card[]; ac
             ? `💳 ${src.issuer_name} ${src.product_name}`
             : `🏦 ${src.institution_name} ${src.nickname}`;
         return (
-          <div key={f.id} className="rounded-xl border border-line bg-panel p-3">
+          <button key={f.id} onClick={() => onTap(f)}
+            className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
             <div className="flex items-baseline justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Severity amount={f.amount_krw} draft={f.is_draft} />
@@ -172,7 +244,7 @@ function FlowList({ flows, cards, accounts }: { flows: Flow[]; cards: Card[]; ac
               </div>
             </div>
             <div className="mt-1 text-xs text-dim">{CATEGORY_LABEL[f.category]} · {srcLabel}</div>
-          </div>
+          </button>
         );
       })}
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw } from '../lib/format.js';
+import { DraftResumeBanner } from '../features/DraftResumeModal.js';
 
 interface Me {
   authenticated: boolean;
@@ -51,6 +52,7 @@ export function Home() {
 
   return (
     <div className="space-y-3 p-4 pb-24">
+      <DraftResumeBanner />
       <h1 className="text-xl">
         안녕하세요, <span className="text-teal">{me?.membership?.display_name ?? '...'}님</span> 👋
       </h1>

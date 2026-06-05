@@ -10,6 +10,7 @@ import { Home } from './pages/Home.js';
 import { Flow } from './pages/Flow.js';
 import { List } from './pages/List.js';
 import { More } from './pages/More.js';
+import { History } from './pages/History.js';
 import { BottomNav } from './components/BottomNav.js';
 
 type Stage = 'loading' | 'login' | 'setup' | 'app';
@@ -107,6 +108,7 @@ function AppInner() {
         <Route path="/flow" element={<Flow />} />
         <Route path="/list" element={<List />} />
         <Route path="/more" element={<More />} />
+        <Route path="/history" element={<History />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       <BottomNav />
