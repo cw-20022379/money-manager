@@ -9,19 +9,21 @@ const tabs = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-line bg-panel">
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-line bg-bg">
       <div className="mx-auto flex max-w-[700px] justify-around">
         {tabs.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 py-2 flex-1 text-xs ${
-                isActive ? 'text-teal' : 'text-dim'
+              `flex flex-col items-center gap-0.5 py-2 flex-1 text-[11px] transition-colors ${
+                isActive
+                  ? 'text-[#37352f] font-semibold'
+                  : 'text-[#9b9a97] hover:text-[#787774]'
               }`
             }
           >
-            <span className="text-xl leading-none">{t.icon}</span>
+            <span className="text-lg leading-none">{t.icon}</span>
             <span>{t.label}</span>
           </NavLink>
         ))}

@@ -52,8 +52,6 @@ export function List() {
     return () => window.removeEventListener('ffn:data-changed', handler);
   }, [refresh]);
 
-  // sessionStorage로 전달된 "특정 항목 편집" 요청
-  // (P6 인터럽트 복귀 / 관계도 노드 클릭에서 사용)
   useEffect(() => {
     const flowId = sessionStorage.getItem('ffn:edit-flow');
     if (flowId && flows.length > 0) {
@@ -98,48 +96,87 @@ export function List() {
   }
 
   return (
-    <div className="space-y-3 p-4 pb-24">
-      <div className="flex gap-1 rounded-lg bg-panel p-1 text-sm">
-        <Seg active={tab === 'flows'} onClick={() => setTab('flows')}>정기지출 {flows.length}</Seg>
-        <Seg active={tab === 'accounts'} onClick={() => setTab('accounts')}>계좌 {accounts.length}</Seg>
-        <Seg active={tab === 'cards'} onClick={() => setTab('cards')}>카드 {cards.length}</Seg>
+    <div className="p-4 pb-24 max-w-[700px] mx-auto">
+      {/* 탭 헤더 */}
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-[22px] font-semibold text-[#37352f]">📋 목록</h1>
+      </div>
+
+      {/* 탭 세그먼트 */}
+      <div className="inline-flex rounded border border-line bg-[#f7f6f3] p-0.5 text-xs gap-0.5 mb-4">
+        <Seg active={tab === 'flows'} onClick={() => setTab('flows')}>
+          💸 정기지출 <span className="ml-1 text-[#9b9a97]">{flows.length}</span>
+        </Seg>
+        <Seg active={tab === 'accounts'} onClick={() => setTab('accounts')}>
+          🏦 계좌 <span className="ml-1 text-[#9b9a97]">{accounts.length}</span>
+        </Seg>
+        <Seg active={tab === 'cards'} onClick={() => setTab('cards')}>
+          💳 카드 <span className="ml-1 text-[#9b9a97]">{cards.length}</span>
+        </Seg>
       </div>
 
       {tab === 'flows' && (
         <FlowList flows={flows} cards={cards} accounts={accounts}
           onTap={(f) => setEdit({ kind: 'edit-flow', flow: f })} />
       )}
+
       {tab === 'accounts' && (
-        <div className="space-y-2">
-          {accounts.length === 0 && <Empty>계좌가 비어있어요. + 버튼으로 등록하세요.</Empty>}
-          {accounts.map((a) => (
-            <button key={a.id} onClick={() => setEdit({ kind: 'edit-account', account: a })}
-              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-              <div className="text-sm">{a.institution_name} · <span className="text-teal">{a.nickname}</span></div>
-              <div className="mt-1 text-xs text-dim">잔액 {krw(a.balance_krw)}</div>
-            </button>
-          ))}
-        </div>
-      )}
-      {tab === 'cards' && (
-        <div className="space-y-2">
-          {cards.length === 0 && <Empty>카드가 비어있어요.</Empty>}
-          {cards.map((c) => (
-            <button key={c.id} onClick={() => setEdit({ kind: 'edit-card', card: c })}
-              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-              <div className="text-sm">{c.issuer_name} · <span className="text-teal">{c.product_name}</span></div>
-              {c.payment_due_day && (
-                <div className="mt-1 text-xs text-dim">결제일 매월 {c.payment_due_day}일</div>
-              )}
-            </button>
-          ))}
+        <div>
+          {accounts.length === 0
+            ? <Empty icon="🏦">계좌가 비어있어요.<br />+ 버튼으로 첫 계좌를 등록하세요.</Empty>
+            : (
+              <div className="rounded-md border border-line divide-y divide-line">
+                {accounts.map((a) => (
+                  <button key={a.id} onClick={() => setEdit({ kind: 'edit-account', account: a })}
+                    className="block w-full px-3 py-2.5 text-left hover:bg-[#f7f6f3] transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[#37352f]">
+                        🏦 {a.institution_name}
+                        <span className="text-[#787774] ml-1">{a.nickname}</span>
+                      </span>
+                      <span className="text-[12px] text-[#787774]">{krw(a.balance_krw)}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
+          }
         </div>
       )}
 
+      {tab === 'cards' && (
+        <div>
+          {cards.length === 0
+            ? <Empty icon="💳">카드가 비어있어요.</Empty>
+            : (
+              <div className="rounded-md border border-line divide-y divide-line">
+                {cards.map((c) => (
+                  <button key={c.id} onClick={() => setEdit({ kind: 'edit-card', card: c })}
+                    className="block w-full px-3 py-2.5 text-left hover:bg-[#f7f6f3] transition-colors">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[#37352f]">
+                        💳 {c.issuer_name}
+                        <span className="text-[#787774] ml-1">{c.product_name}</span>
+                      </span>
+                      {c.payment_due_day && (
+                        <span className="text-[12px] text-[#9b9a97]">매월 {c.payment_due_day}일</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
+          }
+        </div>
+      )}
+
+      {/* FAB — Notion의 "+ New" 버튼 스타일 */}
       <button
         onClick={() => setEdit({ kind: 'new', type: tab })}
-        className="fixed bottom-20 right-6 z-30 rounded-full bg-teal px-5 py-3 text-bg shadow-lg"
-      >+ 새로 등록</button>
+        className="fixed bottom-20 right-6 z-30 rounded-md border border-line bg-bg px-4 py-2.5 text-sm text-[#37352f] shadow-notion hover:bg-[#f7f6f3] transition-colors"
+      >
+        + 새로 등록
+      </button>
 
       {edit?.kind === 'new' && edit.type === 'accounts' && (
         <Modal title="🏦 계좌 등록" onClose={() => setEdit(null)}>
@@ -212,26 +249,54 @@ export function List() {
 
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick}
-      className={`flex-1 rounded-md py-2 ${active ? 'bg-bg text-teal' : 'text-dim'}`}>
+    <button
+      onClick={onClick}
+      className={`rounded px-2.5 py-1 transition-colors text-xs ${
+        active
+          ? 'bg-bg text-[#37352f] shadow-notion font-medium'
+          : 'text-[#787774] hover:text-[#37352f] hover:bg-bg/60'
+      }`}
+    >
       {children}
     </button>
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
+function Empty({ icon, children }: { icon?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-panel/40 p-4 text-center text-sm text-dim">
-      {children}
+    <div className="rounded-md border border-dashed border-line p-8 text-center">
+      {icon && <div className="text-3xl mb-3">{icon}</div>}
+      <p className="text-[13px] text-[#787774]">{children}</p>
     </div>
   );
+}
+
+// 카테고리별 배지 색상
+function categoryBadgeClass(cat: Category): string {
+  const map: Partial<Record<Category, string>> = {
+    UTILITY: 'badge-blue',
+    TELECOM: 'badge-blue',
+    INSURANCE: 'badge-green',
+    MEDIA: 'badge-yellow',
+    SAAS: 'badge-yellow',
+    EDUCATION: 'badge-orange',
+    LOAN: 'badge-red',
+    CARD_BILL: 'badge-gray',
+    RENT: 'badge-orange',
+    HEALTHCARE: 'badge-green',
+  };
+  return map[cat] ?? 'badge-gray';
 }
 
 function FlowList({ flows, cards, accounts, onTap }: {
   flows: Flow[]; cards: Card[]; accounts: Account[]; onTap: (f: Flow) => void;
 }) {
   if (flows.length === 0)
-    return <Empty>정기지출이 비어있어요. + 버튼으로 첫 항목을 등록하세요.</Empty>;
+    return (
+      <Empty icon="💸">
+        정기지출이 비어있어요.<br />+ 버튼으로 첫 항목을 등록하세요.
+      </Empty>
+    );
 
   const sorted = [...flows].sort((a, b) => {
     if (a.is_draft !== b.is_draft) return a.is_draft ? -1 : 1;
@@ -239,7 +304,7 @@ function FlowList({ flows, cards, accounts, onTap }: {
   });
 
   return (
-    <div className="space-y-2">
+    <div className="rounded-md border border-line divide-y divide-line">
       {sorted.map((f) => {
         const src = f.source_card_id
           ? cards.find((c) => c.id === f.source_card_id)
@@ -251,21 +316,26 @@ function FlowList({ flows, cards, accounts, onTap }: {
             : `🏦 ${src.institution_name} ${src.nickname}`;
         return (
           <button key={f.id} onClick={() => onTap(f)}
-            className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-            <div className="flex items-baseline justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Severity amount={f.amount_krw} draft={f.is_draft} />
-                <span className="font-semibold">{f.merchant_name}</span>
-                {f.is_draft && <span className="rounded bg-warn/20 px-1.5 text-[10px] text-warn">초안</span>}
+            className="block w-full px-3 py-2.5 text-left hover:bg-[#f7f6f3] transition-colors">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <AmountDot amount={f.amount_krw} draft={f.is_draft} />
+                <span className="text-sm font-medium text-[#37352f] truncate">{f.merchant_name}</span>
+                {f.is_draft && (
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] badge-orange">초안</span>
+                )}
+                <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${categoryBadgeClass(f.category)}`}>
+                  {CATEGORY_LABEL[f.category]}
+                </span>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold">
+              <div className="text-right shrink-0">
+                <div className="text-[13px] font-medium text-[#37352f]">
                   {f.amount_is_variable ? '변동' : krw(f.amount_krw)}
                 </div>
-                <div className="text-xs text-dim">매월 {f.schedule_day}일</div>
+                <div className="text-[11px] text-[#9b9a97]">매월 {f.schedule_day}일</div>
               </div>
             </div>
-            <div className="mt-1 text-xs text-dim">{CATEGORY_LABEL[f.category]} · {srcLabel}</div>
+            <div className="mt-0.5 text-[11px] text-[#9b9a97]">{srcLabel}</div>
           </button>
         );
       })}
@@ -273,11 +343,11 @@ function FlowList({ flows, cards, accounts, onTap }: {
   );
 }
 
-function Severity({ amount, draft }: { amount: number | null; draft: boolean }) {
-  if (draft) return <span className="text-dim">⚪</span>;
-  if (amount == null) return <span className="text-dim">⚫</span>;
-  if (amount >= 100_000) return <span className="text-bad">🔴</span>;
-  if (amount >= 50_000) return <span className="text-warn">🟠</span>;
-  if (amount >= 20_000) return <span className="text-warn">🟡</span>;
-  return <span className="text-ok">🟢</span>;
+function AmountDot({ amount, draft }: { amount: number | null; draft: boolean }) {
+  if (draft) return <span className="w-2 h-2 rounded-full bg-[#9b9a97] inline-block shrink-0" />;
+  if (amount == null) return <span className="w-2 h-2 rounded-full bg-[#9b9a97] inline-block shrink-0" />;
+  if (amount >= 100_000) return <span className="w-2 h-2 rounded-full bg-bad inline-block shrink-0" />;
+  if (amount >= 50_000) return <span className="w-2 h-2 rounded-full bg-warn inline-block shrink-0" />;
+  if (amount >= 20_000) return <span className="w-2 h-2 rounded-full bg-[#ffe066] inline-block shrink-0" />;
+  return <span className="w-2 h-2 rounded-full bg-ok inline-block shrink-0" />;
 }

@@ -7,12 +7,13 @@
     height: 100%;
   }
   body {
-    background: #0f1419;
-    color: #e6edf3;
+    background: #ffffff;
+    color: #37352f;
     font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     /* 모바일 더블탭 줌 차단 */
     touch-action: manipulation;
+    font-size: 14px;
   }
   /* 일부 브라우저에서 ul/li 마커가 보이는 케이스 강제 차단 */
   ul, ol {
@@ -22,5 +23,25 @@
   }
   li::marker {
     content: '';
+  }
+  /* Notion-style focus ring */
+  :focus-visible {
+    outline: 2px solid #2383e2;
+    outline-offset: 1px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  /* Notion 카테고리 배지 — highlight 배경 + 어두운 텍스트 */
+  .badge-yellow { background: #fef3b0; color: #7b5c05; }
+  .badge-green  { background: #d3f9e0; color: #0f7b6c; }
+  .badge-red    { background: #fde8e8; color: #e03131; }
+  .badge-orange { background: #fde9d4; color: #9e4e0a; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-gray   { background: #f1f1ef; color: #37352f; }
+  /* Notion hover row */
+  .notion-row {
+    @apply px-3 py-2 rounded text-sm transition-colors duration-100 hover:bg-[#f7f6f3] cursor-pointer;
   }
 }

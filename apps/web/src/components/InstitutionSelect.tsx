@@ -8,10 +8,6 @@ interface Props {
   placeholder?: string;
 }
 
-/**
- * 셀렉트박스 + 직접 입력 폴백.
- * 프리셋에 있으면 셀렉트로 표시, 없으면 자유 입력 필드 노출.
- */
 export function InstitutionSelect({ presets, value, onChange, placeholder }: Props) {
   const isPreset = !value || presets.includes(value as (typeof presets)[number]);
   const [custom, setCustom] = useState(isPreset);
@@ -33,7 +29,7 @@ export function InstitutionSelect({ presets, value, onChange, placeholder }: Pro
               onChange(v);
             }
           }}
-          className="w-full rounded-md border border-line bg-panel2 px-3 py-2"
+          className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] focus:border-teal focus:outline-none transition-colors"
         >
           <option value="">— 선택하세요 —</option>
           {presets.map((p) => (
@@ -50,12 +46,12 @@ export function InstitutionSelect({ presets, value, onChange, placeholder }: Pro
             placeholder={placeholder ?? '이름 직접 입력'}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 rounded-md border border-line bg-panel2 px-3 py-2"
+            className="flex-1 rounded border border-line bg-bg px-3 py-2 text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors"
           />
           <button
             type="button"
             onClick={() => { setCustom(false); onChange(''); }}
-            className="rounded-md border border-line px-3 text-xs text-dim"
+            className="rounded border border-line px-3 text-xs text-[#787774] hover:bg-[#f7f6f3] transition-colors"
           >
             목록에서
           </button>

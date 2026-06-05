@@ -24,7 +24,6 @@ interface Props {
   initial?: FlowInitial;
   onDone: () => void;
   onDelete?: () => void;
-  /** P7: "나중에 - 초안으로" 핸들러 (편집 시) */
   onSaveDraft?: () => void;
 }
 
@@ -33,7 +32,7 @@ const CATS: Category[] = [
   'EDUCATION','LOAN','CARD_BILL','RENT','HEALTHCARE','OTHER',
 ];
 
-const DEFAULT_THRESHOLD = 50_000;  // 5만원 이상 변동 → LIFE_EVENT 추천 (P7)
+const DEFAULT_THRESHOLD = 50_000;
 
 export function FlowForm({ initial, onDone, onDelete }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -66,7 +65,6 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 비슷한 항목 가드 (P3) - 신규 등록 시만
   useEffect(() => {
     if (isEdit || !merchant || !day) { setSimilar([]); return; }
     const p = new URLSearchParams({ merchant: merchant.trim(), schedule_day: day });
@@ -160,7 +158,6 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // P7 "나중에 - 초안으로": 변경사항을 is_draft=true로 PATCH (사유=CORRECTION)
   async function saveAsDraft() {
     if (!initial) return;
     const patch = detectChanges();
@@ -183,7 +180,6 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // 추천: 금액 변동 ≥ 5만원, 연결 카드/계좌 변경 → LIFE_EVENT, 그 외 → CORRECTION
   const recommend: 'LIFE_EVENT' | 'CORRECTION' = (() => {
     if (!initial) return 'LIFE_EVENT';
     const patch = detectChanges();
@@ -204,11 +200,11 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
       <form onSubmit={submit} className="space-y-3 text-sm">
         <Field label="어디로 나가는 돈인가요?">
           <input required value={merchant} onChange={(e) => setMerchant(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
         {similar.length > 0 && (
-          <div className="rounded-md border border-warn/40 bg-warn/10 p-2 text-xs text-warn">
+          <div className="rounded border border-[#fde9d4] bg-[#fef9f3] p-2.5 text-xs text-warn">
             💡 비슷한 항목이 이미 {similar.length}건 있어요. 같은 거라면 기존 항목을 수정하세요.
           </div>
         )}
@@ -217,11 +213,11 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
           <div className="flex items-center gap-2">
             <input value={amount} onChange={(e) => setAmount(e.target.value)}
               disabled={isVariable} inputMode="numeric" placeholder="17000"
-              className="flex-1 rounded-md border border-line bg-panel2 px-3 py-2 text-right disabled:opacity-40" />
-            <span className="text-dim">원</span>
+              className="flex-1 rounded border border-line bg-bg px-3 py-2 text-right text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors disabled:opacity-40" />
+            <span className="text-[#787774]">원</span>
           </div>
-          <label className="mt-1 flex items-center gap-1 text-xs text-dim">
-            <input type="checkbox" checked={isVariable} onChange={(e) => setIsVariable(e.target.checked)} />
+          <label className="mt-1.5 flex items-center gap-1.5 text-xs text-[#787774] cursor-pointer">
+            <input type="checkbox" checked={isVariable} onChange={(e) => setIsVariable(e.target.checked)} className="rounded" />
             매달 달라요 (변동 금액)
           </label>
         </Field>
@@ -229,25 +225,33 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
         <Field label="언제? (매달 N일)">
           <input required value={day} onChange={(e) => setDay(e.target.value)}
             inputMode="numeric"
-            className="w-24 rounded-md border border-line bg-panel2 px-3 py-2 text-center" />
+            className="w-24 rounded border border-line bg-bg px-3 py-2 text-center text-[#37352f] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
         <Field label="어디서 빠져요?">
-          <div className="mb-2 flex gap-2">
+          <div className="mb-2 flex gap-1.5">
             <button type="button" onClick={() => setVia('card')}
-              className={`flex-1 rounded-md border py-2 ${via === 'card' ? 'border-teal text-teal' : 'border-line text-dim'}`}>💳 카드로</button>
+              className={`flex-1 rounded border py-1.5 text-xs transition-colors ${
+                via === 'card'
+                  ? 'border-teal bg-[#dbeafe] text-teal font-medium'
+                  : 'border-line text-[#787774] hover:bg-[#f7f6f3]'
+              }`}>💳 카드로</button>
             <button type="button" onClick={() => setVia('account')}
-              className={`flex-1 rounded-md border py-2 ${via === 'account' ? 'border-teal text-teal' : 'border-line text-dim'}`}>🏦 자동이체</button>
+              className={`flex-1 rounded border py-1.5 text-xs transition-colors ${
+                via === 'account'
+                  ? 'border-teal bg-[#dbeafe] text-teal font-medium'
+                  : 'border-line text-[#787774] hover:bg-[#f7f6f3]'
+              }`}>🏦 자동이체</button>
           </div>
           {via === 'card' ? (
             <select value={cardId} onChange={(e) => setCardId(e.target.value)}
-              className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+              className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] focus:border-teal focus:outline-none transition-colors">
               <option value="">— 카드 선택 —</option>
               {cards.map((c) => (<option key={c.id} value={c.id}>{c.issuer_name} {c.product_name}</option>))}
             </select>
           ) : (
             <select value={accountId} onChange={(e) => setAccountId(e.target.value)}
-              className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+              className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] focus:border-teal focus:outline-none transition-colors">
               <option value="">— 계좌 선택 —</option>
               {accounts.map((a) => (<option key={a.id} value={a.id}>{a.institution_name} {a.nickname}</option>))}
             </select>
@@ -259,32 +263,32 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
 
         <Field label="분류">
           <select value={category} onChange={(e) => setCategory(e.target.value as Category)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+            className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] focus:border-teal focus:outline-none transition-colors">
             {CATS.map((c) => (<option key={c} value={c}>{CATEGORY_LABEL[c]}</option>))}
           </select>
         </Field>
 
         <Field label="메모 (선택)">
           <input value={notes} onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
-        <label className="flex items-center gap-2 text-xs text-dim">
-          <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} />
+        <label className="flex items-center gap-1.5 text-xs text-[#787774] cursor-pointer">
+          <input type="checkbox" checked={isDraft} onChange={(e) => setIsDraft(e.target.checked)} className="rounded" />
           ⚪ 정확한 금액 모름 (초안)
         </label>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-1">
           {isEdit && onDelete && (
             <button type="button" onClick={onDelete}
-              className="rounded-md border border-bad px-3 py-2.5 text-sm text-bad">해지</button>
+              className="rounded border border-bad px-3 py-2 text-sm text-bad hover:bg-[#fde8e8] transition-colors">해지</button>
           )}
           <button disabled={busy || noSource} type="submit"
-            className="flex-1 rounded-md bg-teal py-2.5 font-semibold text-bg disabled:opacity-50">
+            className="flex-1 rounded bg-[#37352f] py-2 text-sm font-medium text-white disabled:opacity-40 hover:bg-[#2f2c28] transition-colors">
             {busy ? '저장 중...' : isEdit ? '변경 사항 확인' : '저장'}
           </button>
         </div>
-        {err && <p className="text-xs text-warn">{err}</p>}
+        {err && <p className="text-xs text-bad">{err}</p>}
       </form>
 
       {pendingPatch && initial && (
@@ -292,13 +296,13 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
           title="정기지출 변경 사항 확인"
           detail={
             <div>
-              <b className="text-teal">{initial.merchant_name}</b>
+              <b className="text-[#37352f]">{initial.merchant_name}</b>
               {'amount_krw' in pendingPatch && initial.amount_krw != null && typeof pendingPatch.amount_krw === 'number' && (
-                <div className="mt-1">
+                <div className="mt-1 text-sm">
                   {initial.amount_krw.toLocaleString()} → {pendingPatch.amount_krw.toLocaleString()}원
                 </div>
               )}
-              <div className="mt-1 text-xs text-dim">
+              <div className="mt-1 text-xs text-[#787774]">
                 {Object.keys(pendingPatch).join(', ')} 변경
               </div>
             </div>
@@ -316,7 +320,7 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-dim">{label}</label>
+      <label className="mb-1 block text-xs text-[#787774]">{label}</label>
       {children}
     </div>
   );

@@ -110,7 +110,6 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // 결제일·결제계좌·발급사 변경은 LIFE_EVENT, 그 외는 CORRECTION
   const recommend: 'LIFE_EVENT' | 'CORRECTION' = (() => {
     if (!initial) return 'LIFE_EVENT';
     const patch = detectChanges();
@@ -128,28 +127,32 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
         </Field>
 
         <Field label="종류">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {TYPES.map((t) => (
               <button key={t.v} type="button" onClick={() => setType(t.v)}
-                className={`rounded-md border px-3 py-1.5 ${type === t.v ? 'border-teal text-teal' : 'border-line text-dim'}`}>{t.t}</button>
+                className={`rounded border px-2.5 py-1 text-xs transition-colors ${
+                  type === t.v
+                    ? 'border-teal bg-[#dbeafe] text-teal font-medium'
+                    : 'border-line text-[#787774] hover:bg-[#f7f6f3]'
+                }`}>{t.t}</button>
             ))}
           </div>
         </Field>
 
         <Field label="카드 상품명">
           <input required value={product} onChange={(e) => setProduct(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
         <Field label="카드번호 (선택, 4자리마다 자동 대시)">
           <input inputMode="text" value={cardNum} onChange={(e) => setCardNum(formatCardNumber(e.target.value))}
             placeholder="5325********1234"
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2 font-mono" />
+            className="w-full rounded border border-line bg-bg px-3 py-2 font-mono text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
         <Field label="대금 결제 계좌 (선택)">
           <select value={billingAccountId} onChange={(e) => setBillingAccountId(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+            className="w-full rounded border border-line bg-bg px-3 py-2 text-[#37352f] focus:border-teal focus:outline-none transition-colors">
             <option value="">— 선택 안 함 —</option>
             {accounts.map((a) => (<option key={a.id} value={a.id}>{a.institution_name} {a.nickname}</option>))}
           </select>
@@ -158,26 +161,31 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
         <Field label="결제일 (매월 N일)">
           <input value={dueDay} onChange={(e) => setDueDay(e.target.value)}
             inputMode="numeric" placeholder="15"
-            className="w-32 rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-32 rounded border border-line bg-bg px-3 py-2 text-[#37352f] placeholder:text-[#9b9a97] focus:border-teal focus:outline-none transition-colors" />
         </Field>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-1">
           {isEdit && onDelete && (
             <button type="button" onClick={onDelete}
-              className="rounded-md border border-bad px-3 py-2.5 text-sm text-bad">해지</button>
+              className="rounded border border-bad px-3 py-2 text-sm text-bad hover:bg-[#fde8e8] transition-colors">해지</button>
           )}
           <button disabled={busy || !issuer} type="submit"
-            className="flex-1 rounded-md bg-teal py-2.5 font-semibold text-bg disabled:opacity-50">
+            className="flex-1 rounded bg-[#37352f] py-2 text-sm font-medium text-white disabled:opacity-40 hover:bg-[#2f2c28] transition-colors">
             {busy ? '저장 중...' : isEdit ? '변경 사항 확인' : '저장'}
           </button>
         </div>
-        {err && <p className="text-xs text-warn">{err}</p>}
+        {err && <p className="text-xs text-bad">{err}</p>}
       </form>
 
       {pendingPatch && initial && (
         <ReasonModal
           title="카드 변경 사항 확인"
-          detail={<div><b className="text-teal">{initial.product_name}</b><div className="mt-1 text-xs text-dim">{Object.keys(pendingPatch).join(', ')} 변경</div></div>}
+          detail={
+            <div>
+              <b className="text-[#37352f]">{initial.product_name}</b>
+              <div className="mt-1 text-xs text-[#787774]">{Object.keys(pendingPatch).join(', ')} 변경</div>
+            </div>
+          }
           recommend={recommend}
           onConfirm={confirmPatch}
           onCancel={() => setPendingPatch(null)}
@@ -190,7 +198,7 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-dim">{label}</label>
+      <label className="mb-1 block text-xs text-[#787774]">{label}</label>
       {children}
     </div>
   );
