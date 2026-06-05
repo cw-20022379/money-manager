@@ -49,24 +49,24 @@ interface NodeData extends Record<string, unknown> {
 
 function AccountNodeView({ data }: { data: NodeData }) {
   return (
-    <div className="rounded-xl border border-teal/60 bg-panel px-3 py-2 shadow-md" style={{ width: NODE_W }}>
+    <div className="rounded-xl bg-white px-3 py-2 shadow-card" style={{ width: NODE_W, border: '1.5px solid #00d2c4' }}>
       <Handle type="source" position={Position.Right} className="!bg-teal" />
-      <div className="text-xs text-dim">🏦 계좌</div>
-      <div className="text-sm font-semibold text-teal">{data.label}</div>
-      {data.sub && <div className="mt-1 text-[11px] text-dim">{data.sub}</div>}
-      {data.amount && <div className="text-[11px] text-warn">매월 {data.amount} 빠짐</div>}
+      <div className="text-[10px] font-medium" style={{ color: '#94a3b8' }}>계좌</div>
+      <div className="text-sm font-semibold" style={{ color: '#00d2c4' }}>{data.label}</div>
+      {data.sub && <div className="mt-1 text-[11px]" style={{ color: '#64748b' }}>{data.sub}</div>}
+      {data.amount && <div className="text-[11px] font-medium" style={{ color: '#f59e0b' }}>매월 {data.amount} 빠짐</div>}
     </div>
   );
 }
 
 function CardNodeView({ data }: { data: NodeData }) {
   return (
-    <div className="rounded-xl border border-warn/50 bg-panel px-3 py-2 shadow-md" style={{ width: NODE_W }}>
-      <Handle type="target" position={Position.Left} className="!bg-warn" />
-      <Handle type="source" position={Position.Right} className="!bg-warn" />
-      <div className="text-xs text-dim">💳 카드</div>
-      <div className="text-sm font-semibold">{data.label}</div>
-      {data.amount && <div className="mt-1 text-[11px] text-warn">매월 {data.amount}</div>}
+    <div className="rounded-xl bg-white px-3 py-2 shadow-card" style={{ width: NODE_W, border: '1.5px solid #f59e0b' }}>
+      <Handle type="target" position={Position.Left} style={{ background: '#f59e0b' }} />
+      <Handle type="source" position={Position.Right} style={{ background: '#f59e0b' }} />
+      <div className="text-[10px] font-medium" style={{ color: '#94a3b8' }}>카드</div>
+      <div className="text-sm font-semibold text-body">{data.label}</div>
+      {data.amount && <div className="mt-1 text-[11px] font-medium" style={{ color: '#f59e0b' }}>매월 {data.amount}</div>}
     </div>
   );
 }
@@ -74,19 +74,21 @@ function CardNodeView({ data }: { data: NodeData }) {
 function FlowNodeView({ data }: { data: NodeData }) {
   return (
     <div
-      className={`rounded-xl border px-3 py-2 shadow-md ${
-        data.draft ? 'border-dim bg-panel/50' : 'border-line bg-panel'
-      }`}
-      style={{ width: NODE_W }}
+      className="rounded-xl bg-white px-3 py-2 shadow-card"
+      style={{
+        width: NODE_W,
+        border: data.draft ? '1px dashed #cbd5e1' : '1px solid #e2e8f0',
+        opacity: data.draft ? 0.75 : 1,
+      }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-line" />
-      <div className="text-xs text-dim">
-        {data.draft ? '⚪ 초안' : '💸 정기지출'}
+      <Handle type="target" position={Position.Left} style={{ background: '#e2e8f0' }} />
+      <div className="text-[10px] font-medium" style={{ color: '#94a3b8' }}>
+        {data.draft ? '초안' : '정기지출'}
       </div>
-      <div className="text-sm font-semibold">{data.label}</div>
-      <div className="mt-1 flex justify-between text-[11px] text-dim">
-        <span>{data.sub}</span>
-        <span className="text-teal">{data.amount}</span>
+      <div className="text-sm font-semibold text-body">{data.label}</div>
+      <div className="mt-1 flex justify-between text-[11px]">
+        <span style={{ color: '#64748b' }}>{data.sub}</span>
+        <span style={{ color: '#00d2c4' }} className="font-medium tabular-nums">{data.amount}</span>
       </div>
     </div>
   );
@@ -137,7 +139,7 @@ function buildGraph(data: GraphData): { nodes: Node<NodeData>[]; edges: Edge[] }
         id: `e:${acc.id}->${card.id}`,
         source: `account:${acc.id}`,
         target: `card:${card.id}`,
-        style: { stroke: '#f6ad55', strokeWidth: 1.5 },
+        style: { stroke: '#f59e0b', strokeWidth: 1.5 },
         animated: false,
       });
 
@@ -160,7 +162,7 @@ function buildGraph(data: GraphData): { nodes: Node<NodeData>[]; edges: Edge[] }
           id: `e:${card.id}->${flow.id}`,
           source: `card:${card.id}`,
           target: `flow:${flow.id}`,
-          style: { stroke: '#4a5568', strokeWidth: 1 },
+          style: { stroke: '#cbd5e1', strokeWidth: 1 },
         });
         flowCursor += ROW_H;
       }
@@ -187,7 +189,7 @@ function buildGraph(data: GraphData): { nodes: Node<NodeData>[]; edges: Edge[] }
         id: `e:${acc.id}->${flow.id}`,
         source: `account:${acc.id}`,
         target: `flow:${flow.id}`,
-        style: { stroke: '#4a5568', strokeDasharray: '4 4', strokeWidth: 1 },
+        style: { stroke: '#cbd5e1', strokeDasharray: '4 4', strokeWidth: 1 },
       });
       directCursor += ROW_H;
     }
@@ -235,14 +237,17 @@ export function RelationshipGraph({ data }: Props) {
 
   if (nodes.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-dim">
+      <div
+        className="rounded-xl border border-dashed p-6 text-center text-sm text-dim"
+        style={{ borderColor: '#00d2c4', background: '#f0fdf4' }}
+      >
         그릴 게 없어요. 목록 탭에서 계좌·카드·정기지출을 등록하세요.
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-220px)] min-h-[400px] overflow-hidden rounded-xl border border-line bg-bg">
+    <div className="h-[calc(100vh-220px)] min-h-[400px] overflow-hidden rounded-xl border border-line bg-panel">
       <ReactFlow
         nodes={nodes as Node[]}
         edges={edges}
@@ -257,17 +262,21 @@ export function RelationshipGraph({ data }: Props) {
         nodesConnectable={false}
         elementsSelectable
       >
-        <Background color="#2d3748" gap={20} />
-        <Controls position="bottom-right" className="!bg-panel !text-teal" showInteractive={false} />
+        <Background color="#e2e8f0" gap={20} />
+        <Controls
+          position="bottom-right"
+          className="!bg-white !border-line !text-body"
+          showInteractive={false}
+        />
         {nodes.length > 8 && (
           <MiniMap
             position="top-right"
             nodeColor={(n) => {
               const k = (n.data as NodeData).entityKind;
-              return k === 'ACCOUNT' ? '#4fd1c5' : k === 'CARD' ? '#f6ad55' : '#4a5568';
+              return k === 'ACCOUNT' ? '#00d2c4' : k === 'CARD' ? '#f59e0b' : '#94a3b8';
             }}
-            maskColor="rgba(15,20,25,0.7)"
-            className="!bg-panel"
+            maskColor="rgba(248,250,252,0.7)"
+            className="!bg-white !border-line"
           />
         )}
       </ReactFlow>
