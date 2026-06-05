@@ -7,14 +7,14 @@
     height: 100%;
   }
   body {
-    background: #0f1419;
-    color: #e6edf3;
-    font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
+    background: linear-gradient(160deg, #f2f2f7 0%, #e5e5ea 100%);
+    background-attachment: fixed;
+    color: #1c1c1e;
+    font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Pretendard', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    /* 모바일 더블탭 줌 차단 */
+    -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation;
   }
-  /* 일부 브라우저에서 ul/li 마커가 보이는 케이스 강제 차단 */
   ul, ol {
     list-style: none;
     padding: 0;
@@ -23,4 +23,198 @@
   li::marker {
     content: '';
   }
+
+  /* Tabular numbers for financial figures */
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  /* iOS Glass Card */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  /* iOS Wallet Card — stacked paper look */
+  .wallet-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 22px;
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    position: relative;
+    transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 180ms ease;
+  }
+
+  .wallet-card:active {
+    transform: scale(0.97);
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.12);
+  }
+
+  /* iOS Grouped List Row */
+  .list-row {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Amount display */
+  .amount-display {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Label caps */
+  .label-caps {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8e8e93;
+  }
+
+  /* iOS Segment Control */
+  .seg-control {
+    background: rgba(118, 118, 128, 0.12);
+    border-radius: 10px;
+    padding: 2px;
+    display: flex;
+  }
+
+  .seg-btn {
+    flex: 1;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    transition: all 160ms ease;
+    color: #8e8e93;
+  }
+
+  .seg-btn.active {
+    background: rgba(255, 255, 255, 0.90);
+    color: #1c1c1e;
+    font-weight: 600;
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Card stack — paper cards peeking */
+  .card-stack-container {
+    position: relative;
+  }
+
+  .card-stack-bg-2 {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: -14px;
+    height: 100%;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.10);
+    z-index: 1;
+  }
+
+  .card-stack-bg-1 {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: -8px;
+    height: 100%;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.60);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.12);
+    z-index: 2;
+  }
+
+  .card-stack-top {
+    position: relative;
+    z-index: 3;
+  }
+}
+
+@layer utilities {
+  .text-system { color: #1c1c1e; }
+  .text-secondary { color: #3c3c43; }
+  .text-tertiary { color: #8e8e93; }
+  .text-quaternary { color: #c7c7cc; }
+
+  /* SF Numbers style for currency */
+  .sf-number {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.03em;
+  }
+
+  /* Hairline border (0.5px) */
+  .border-hairline {
+    border-width: 0.5px;
+  }
+}
+
+/* Card entrance animation */
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Staggered entrance delays */
+.delay-50 { animation-delay: 50ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* Toast slide-up animation */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast {
+  animation: toast-enter 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }

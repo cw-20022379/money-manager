@@ -8,10 +8,10 @@ interface Ctx {
 
 const ToastContext = createContext<Ctx | null>(null);
 
-const VISIBLE = 4;          // 동시에 보이는 최대 stack 깊이
-const STEP_Y = 8;           // 한 단계 뒤로 갈수록 위로 밀리는 px
-const STEP_SCALE = 0.04;    // 한 단계 뒤로 갈수록 작아지는 비율
-const STEP_OPACITY = 0.22;  // 한 단계 뒤로 갈수록 흐려지는 비율
+const VISIBLE = 4;
+const STEP_Y = 6;
+const STEP_SCALE = 0.035;
+const STEP_OPACITY = 0.22;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
@@ -23,25 +23,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 5000);
   }, []);
 
-  // dev 환경에서만 E2E가 토스트를 직접 트리거할 수 있도록 노출
   useEffect(() => {
     if (import.meta.env.DEV) {
       (window as unknown as { __pushToast?: typeof push }).__pushToast = push;
     }
   }, [push]);
 
-  // 최신이 0번. 그 뒤로 갈수록 stack 안쪽
   const stack = [...items].reverse();
 
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      {/* BottomNav(~64px) 위에 위치. h-0 컨테이너 + absolute 자식이 위로 쌓임 */}
-      <div className="pointer-events-none fixed bottom-20 left-0 right-0 z-50 flex justify-center">
-        <div className="relative h-0 w-[min(420px,calc(100vw-2rem))]">
+      {/* iOS HUD-style toast — glass capsule above BottomNav */}
+      <div className="pointer-events-none fixed bottom-24 left-0 right-0 z-50 flex justify-center">
+        <div className="relative h-0 w-[min(380px,calc(100vw-3rem))]">
           {stack.map((t, idx) => {
             if (idx >= VISIBLE) return null;
-            const opacity = idx === 0 ? 1 : Math.max(1 - idx * STEP_OPACITY, 0.3);
+            const opacity = idx === 0 ? 1 : Math.max(1 - idx * STEP_OPACITY, 0.25);
+            const isWarn = t.tone === 'warn';
             return (
               <div
                 key={t.id}
@@ -56,19 +55,51 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   transformOrigin: 'bottom center',
                   opacity,
                   zIndex: 100 - idx,
-                  transition: 'transform 180ms ease, opacity 180ms ease',
+                  transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), opacity 200ms ease',
                 }}
-                className="pointer-events-auto flex justify-center"
+                className={`pointer-events-auto flex justify-center ${idx === 0 ? 'animate-toast' : ''}`}
               >
-                <span
-                  className={`max-w-full truncate rounded-full border px-4 py-2 text-sm shadow-lg ${
-                    t.tone === 'warn'
-                      ? 'border-warn bg-bg/95 text-warn'
-                      : 'border-teal bg-bg/95 text-teal'
-                  }`}
+                <div
+                  style={{
+                    background: isWarn
+                      ? 'rgba(30, 22, 5, 0.86)'
+                      : 'rgba(20, 20, 22, 0.86)',
+                    backdropFilter: 'blur(24px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                    borderRadius: 100,
+                    border: `1px solid ${isWarn ? 'rgba(255,149,0,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                    boxShadow: '0 8px 32px -4px rgba(0,0,0,0.4)',
+                    padding: '9px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    maxWidth: '100%',
+                  }}
                 >
-                  {t.text}
-                </span>
+                  {/* Status dot */}
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: isWarn ? '#ff9500' : '#34c759',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#ffffff',
+                      letterSpacing: '-0.01em',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {t.text}
+                  </span>
+                </div>
               </div>
             );
           })}
