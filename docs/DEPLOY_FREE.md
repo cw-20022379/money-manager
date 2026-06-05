@@ -29,7 +29,7 @@ flowchart TB
         S[("Postgres + Auth + Realtime<br/>xxx.supabase.co<br/>━━━━━━━━━━━━━━<br/>500 MB DB · 50k MAU · 2 GB egress")]
     end
 
-    GHA["⏰ GitHub Actions<br/>keepalive cron<br/>KST 07~23시<br/>2,000분/월"]
+    GHA["⏰ GitHub Actions<br/>keepalive cron<br/>KST 07~23시<br/>퍼블릭 리포 = 무제한"]
     GHA -.->|매 10분 핑| R
 
     style FRONT fill:#1e3a2a,stroke:#5ad19a
@@ -320,10 +320,17 @@ jobs:
 > URL은 본인 Render API 도메인으로 교체.
 
 ### 6-2. 한도 계산
-- 매 10분 × 16시간 = 96 ping/일
-- 한 ping 평균 1~3초 (cold start 시 60초)
-- 월 사용: 약 80~150분 (GitHub Actions 한도 2,000분의 4~8%)
-- Render 가동: 16h × 31일 = 496시간 (Free 750h의 66%, 안전)
+
+**GitHub Actions 무료 한도** (잡 1건당 최소 1분으로 올림 과금 ⚠️):
+| 리포 가시성 | 무료 분량 | 우리 사용량 | 결론 |
+|---|---|---|---|
+| **퍼블릭** | **무제한** | 2,880 잡/월 | ✅ 안전 (본 가이드 기본 전제) |
+| 프라이빗 (Free 플랜) | 2,000분/월 | 2,880분/월 (10분 간격) | ❌ 초과 — cron을 30분 간격으로 (`*/30`) 또는 외부 cron 서비스 사용 |
+
+> 본 가이드는 **퍼블릭 리포** 전제. 토이 가족용이라 코드 노출은 무방하고 키·시크릿은 모두 `.gitignore`+환경변수로 외부 노출 없음. 프라이빗 유지를 원하면 cron 간격을 30분 이상으로 늘리세요.
+
+**Render 가동 시간** (750h/월 한도):
+- 16h × 31일 = 496시간 → 한도의 66%, 안전
 
 ### 6-3. Commit
 ```bash
@@ -410,7 +417,8 @@ Dashboard → 좌상단 메뉴 → Billing → Usage:
 
 ### GitHub Actions
 GitHub → Settings → Billing → Actions:
-- Free 2,000분 / 월. 평균 100~150분 사용
+- **퍼블릭 리포** → 무제한 무료 (본 가이드 기본 전제) ✅
+- **프라이빗 리포** → 2,000분/월 한도. 각 잡은 최소 1분으로 과금되므로 10분 간격 cron(2,880 잡/월)이면 초과. 사용 시 cron을 30분(960분)으로 줄이거나 외부 cron 서비스(cron-job.org, Uptime Robot) 사용.
 
 ---
 
