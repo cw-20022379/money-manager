@@ -3,18 +3,22 @@ import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
 import { CATEGORY_LABEL } from '@ffn/shared';
 import { RelationshipGraph, type GraphData } from '../features/RelationshipGraph.js';
+import { CashflowCalendar, type CalFlow } from '../features/CashflowCalendar.js';
 
 type FlowNode = GraphData['tree'][number]['cards'][number]['children'][number];
 type CardNode = GraphData['tree'][number]['cards'][number];
 type AccountNode = GraphData['tree'][number];
 
-type View = 'tree' | 'graph';
+type View = 'tree' | 'graph' | 'calendar';
+const ALLOWED: readonly View[] = ['tree', 'graph', 'calendar'];
 
 export function Flow() {
   const [data, setData] = useState<GraphData | null>(null);
-  const [view, setView] = useState<View>(() =>
-    (sessionStorage.getItem('ffn:flow-view') as View) || 'tree',
-  );
+  const [calFlows, setCalFlows] = useState<CalFlow[] | null>(null);
+  const [view, setView] = useState<View>(() => {
+    const stored = sessionStorage.getItem('ffn:flow-view') as View | null;
+    return stored && ALLOWED.includes(stored) ? stored : 'tree';
+  });
 
   useEffect(() => {
     const load = () => api<GraphData>('/api/graph').then(setData).catch(console.error);
@@ -22,6 +26,17 @@ export function Flow() {
     window.addEventListener('ffn:data-changed', load);
     return () => window.removeEventListener('ffn:data-changed', load);
   }, []);
+
+  useEffect(() => {
+    if (view !== 'calendar') return;
+    const load = () =>
+      api<{ items: CalFlow[] }>('/api/flows?status=ACTIVE')
+        .then((r) => setCalFlows(r.items))
+        .catch(console.error);
+    load();
+    window.addEventListener('ffn:data-changed', load);
+    return () => window.removeEventListener('ffn:data-changed', load);
+  }, [view]);
 
   function changeView(v: View) {
     setView(v);
@@ -35,12 +50,19 @@ export function Flow() {
         <div className="flex gap-1 rounded-lg bg-panel p-1 text-xs">
           <Seg active={view === 'tree'} onClick={() => changeView('tree')}>📋 트리</Seg>
           <Seg active={view === 'graph'} onClick={() => changeView('graph')}>🕸 관계도</Seg>
+          <Seg active={view === 'calendar'} onClick={() => changeView('calendar')}>📅 캘린더</Seg>
         </div>
       </header>
 
       {!data && <div className="text-dim">불러오는 중...</div>}
 
       {data && view === 'graph' && <RelationshipGraph data={data} />}
+
+      {view === 'calendar' && (
+        calFlows == null
+          ? <div className="text-dim">캘린더 불러오는 중...</div>
+          : <CashflowCalendar flows={calFlows} />
+      )}
 
       {data && view === 'tree' && (
         <>
