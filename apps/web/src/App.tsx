@@ -12,10 +12,35 @@ import { List } from './pages/List.js';
 import { More } from './pages/More.js';
 import { History } from './pages/History.js';
 import { BottomNav } from './components/BottomNav.js';
+import { isPreviewMode, markPreviewMode } from './lib/preview.js';
 
 type Stage = 'loading' | 'login' | 'setup' | 'app';
 
 export function App() {
+  if (isPreviewMode()) {
+    markPreviewMode();
+    return (
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/preview" element={<Navigate to="/home" replace />} />
+            <Route path="/preview/home" element={<Navigate to="/home" replace />} />
+            <Route path="/preview/flow" element={<Navigate to="/flow" replace />} />
+            <Route path="/preview/list" element={<Navigate to="/list" replace />} />
+            <Route path="/preview/more" element={<Navigate to="/more" replace />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/flow" element={<Flow />} />
+            <Route path="/list" element={<List />} />
+            <Route path="/more" element={<More />} />
+            <Route path="/history" element={<History />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
+          </Routes>
+          <BottomNav />
+        </BrowserRouter>
+      </ToastProvider>
+    );
+  }
   return (
     <ToastProvider>
       <AppInner />
