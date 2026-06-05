@@ -110,7 +110,6 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // 결제일·결제계좌·발급사 변경은 LIFE_EVENT, 그 외는 CORRECTION
   const recommend: 'LIFE_EVENT' | 'CORRECTION' = (() => {
     if (!initial) return 'LIFE_EVENT';
     const patch = detectChanges();
@@ -122,7 +121,7 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
 
   return (
     <>
-      <form onSubmit={submit} className="space-y-3 text-sm">
+      <form onSubmit={submit} className="space-y-4 text-sm">
         <Field label="카드사">
           <InstitutionSelect presets={CARD_ISSUER_PRESETS} value={issuer} onChange={setIssuer} placeholder="카드사 직접 입력" />
         </Field>
@@ -131,25 +130,27 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
           <div className="flex flex-wrap gap-2">
             {TYPES.map((t) => (
               <button key={t.v} type="button" onClick={() => setType(t.v)}
-                className={`rounded-md border px-3 py-1.5 ${type === t.v ? 'border-teal text-teal' : 'border-line text-dim'}`}>{t.t}</button>
+                className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+                  type === t.v ? 'border-teal bg-teal/5 text-teal' : 'border-line text-dim'
+                }`}>{t.t}</button>
             ))}
           </div>
         </Field>
 
         <Field label="카드 상품명">
           <input required value={product} onChange={(e) => setProduct(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-body outline-none focus:border-teal" />
         </Field>
 
         <Field label="카드번호 (선택, 4자리마다 자동 대시)">
           <input inputMode="text" value={cardNum} onChange={(e) => setCardNum(formatCardNumber(e.target.value))}
             placeholder="5325********1234"
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2 font-mono" />
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 font-mono text-body outline-none focus:border-teal" />
         </Field>
 
         <Field label="대금 결제 계좌 (선택)">
           <select value={billingAccountId} onChange={(e) => setBillingAccountId(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-body outline-none focus:border-teal">
             <option value="">— 선택 안 함 —</option>
             {accounts.map((a) => (<option key={a.id} value={a.id}>{a.institution_name} {a.nickname}</option>))}
           </select>
@@ -158,20 +159,20 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
         <Field label="결제일 (매월 N일)">
           <input value={dueDay} onChange={(e) => setDueDay(e.target.value)}
             inputMode="numeric" placeholder="15"
-            className="w-32 rounded-md border border-line bg-panel2 px-3 py-2" />
+            className="w-32 rounded-xl border border-line bg-surface px-4 py-3 text-body outline-none focus:border-teal" />
         </Field>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-1">
           {isEdit && onDelete && (
             <button type="button" onClick={onDelete}
-              className="rounded-md border border-bad px-3 py-2.5 text-sm text-bad">해지</button>
+              className="rounded-xl border border-bad/40 px-4 py-3 text-sm font-medium text-bad">해지</button>
           )}
           <button disabled={busy || !issuer} type="submit"
-            className="flex-1 rounded-md bg-teal py-2.5 font-semibold text-bg disabled:opacity-50">
+            className="flex-1 rounded-xl bg-teal py-3 font-bold text-white disabled:opacity-40">
             {busy ? '저장 중...' : isEdit ? '변경 사항 확인' : '저장'}
           </button>
         </div>
-        {err && <p className="text-xs text-warn">{err}</p>}
+        {err && <p className="text-xs text-bad">{err}</p>}
       </form>
 
       {pendingPatch && initial && (
@@ -190,7 +191,7 @@ export function CardForm({ initial, onDone, onDelete }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-dim">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium text-dim">{label}</label>
       {children}
     </div>
   );

@@ -11,7 +11,7 @@ interface Props {
   detail?: React.ReactNode;
   recommend: 'LIFE_EVENT' | 'CORRECTION';
   onConfirm: (r: ReasonResult) => void;
-  onLater?: () => void;   // P7: "나중에 - 초안으로"
+  onLater?: () => void;
   onCancel: () => void;
 }
 
@@ -22,9 +22,9 @@ export function ReasonModal({ title, detail, recommend, onConfirm, onLater, onCa
 
   return (
     <Modal title={title} onClose={onCancel}>
-      {detail && <div className="mb-3 rounded-md bg-panel2 p-3 text-sm">{detail}</div>}
+      {detail && <div className="mb-4 rounded-2xl bg-surface p-3 text-sm">{detail}</div>}
 
-      <p className="mb-2 text-xs text-dim">어떤 변경인가요?</p>
+      <p className="mb-3 text-xs font-medium text-dim">어떤 변경인가요?</p>
 
       <ReasonCard
         active={reason === 'LIFE_EVENT'}
@@ -43,20 +43,20 @@ export function ReasonModal({ title, detail, recommend, onConfirm, onLater, onCa
         desc="단순 수정·오타 정정. 알림 없음."
       />
 
-      <label className="mb-1 mt-3 block text-xs text-dim">한 줄 메모 (선택)</label>
+      <label className="mb-1.5 mt-4 block text-xs font-medium text-dim">한 줄 메모 (선택)</label>
       <input
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="예: 둘째 영어학원 추가됨"
-        className="w-full rounded-md border border-line bg-panel2 px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-body outline-none focus:border-teal"
       />
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-5 flex gap-2">
         {onLater && (
           <button
             type="button"
             onClick={onLater}
-            className="flex-1 rounded-md border border-line py-2 text-sm text-dim"
+            className="flex-1 rounded-xl border border-line py-3 text-sm font-medium text-sub"
           >
             나중에 - 초안으로
           </button>
@@ -69,7 +69,7 @@ export function ReasonModal({ title, detail, recommend, onConfirm, onLater, onCa
             try { await onConfirm({ reason, note: note || undefined }); }
             finally { setBusy(false); }
           }}
-          className="flex-[2] rounded-md bg-teal py-2 font-semibold text-bg disabled:opacity-50"
+          className="flex-[2] rounded-xl bg-teal py-3 font-bold text-white disabled:opacity-40"
         >
           {busy ? '저장 중...' : '저장'}
         </button>
@@ -88,16 +88,18 @@ function ReasonCard({
     <button
       type="button"
       onClick={onClick}
-      className={`mb-2 flex w-full items-start gap-3 rounded-lg border px-3 py-3 text-left ${
-        active ? 'border-teal bg-teal/5' : 'border-line bg-panel2/40'
+      className={`mb-2 flex w-full items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition-colors ${
+        active ? 'border-teal bg-teal/5' : 'border-line bg-surface'
       }`}
     >
-      <div className="text-base text-teal">{active ? '●' : '○'}</div>
+      <div className="mt-0.5 text-base text-teal">{active ? '●' : '○'}</div>
       <div className="flex-1">
-        <div className="flex items-center gap-2 text-sm font-semibold">
+        <div className="flex items-center gap-2 text-sm font-bold text-body">
           <span>{icon}</span>
           <span>{label}</span>
-          {isRecommend && <span className="ml-1 rounded bg-teal/20 px-1.5 text-[10px] text-teal">⭐ 추천</span>}
+          {isRecommend && (
+            <span className="ml-1 rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium text-teal">추천</span>
+          )}
         </div>
         <div className="mt-1 text-xs text-dim">{desc}</div>
       </div>

@@ -61,10 +61,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 className="pointer-events-auto flex justify-center"
               >
                 <span
-                  className={`max-w-full truncate rounded-full border px-4 py-2 text-sm shadow-lg ${
+                  className={`max-w-full truncate rounded-full px-5 py-2.5 text-sm font-medium shadow-[0_4px_16px_rgba(25,31,40,0.18)] ${
                     t.tone === 'warn'
-                      ? 'border-warn bg-bg/95 text-warn'
-                      : 'border-teal bg-bg/95 text-teal'
+                      ? 'bg-[#191f28]/90 text-[#ff9500]'
+                      : 'bg-[#191f28]/90 text-white'
                   }`}
                 >
                   {t.text}

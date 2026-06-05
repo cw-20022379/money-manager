@@ -5,7 +5,7 @@ import { api } from '../lib/api.js';
 interface Props {
   title: string;
   subjectLabel: string;
-  endpoint: string;        // 예: /api/flows/<uuid>
+  endpoint: string;
   version: number;
   onDone: () => void;
   onCancel: () => void;
@@ -37,23 +37,23 @@ export function DeleteConfirm({ title, subjectLabel, endpoint, version, onDone, 
 
   return (
     <Modal title={title} onClose={onCancel}>
-      <div className="mb-4 rounded-md bg-panel2 p-3 text-sm">
+      <div className="mb-5 rounded-2xl bg-[#fff0f1] p-4 text-sm">
         <b className="text-bad">{subjectLabel}</b>
         <div className="mt-1 text-xs text-dim">정말 해지할까요? (소프트 삭제 — 변경 기록에 보존됨)</div>
       </div>
       <div className="flex gap-2">
-        <button onClick={onCancel} className="flex-1 rounded-md border border-line py-2 text-sm">
+        <button onClick={onCancel} className="flex-1 rounded-xl border border-line py-3 text-sm font-medium text-sub">
           취소
         </button>
         <button
           onClick={confirm}
           disabled={busy}
-          className="flex-[2] rounded-md bg-bad py-2 font-semibold text-bg disabled:opacity-50"
+          className="flex-[2] rounded-xl bg-bad py-3 font-bold text-white disabled:opacity-40"
         >
           {busy ? '해지 중...' : '예, 해지합니다'}
         </button>
       </div>
-      {err && <p className="mt-2 text-xs text-warn">{err}</p>}
+      {err && <p className="mt-2 text-xs text-bad">{err}</p>}
     </Modal>
   );
 }

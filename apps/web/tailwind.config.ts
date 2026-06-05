@@ -5,19 +5,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#0f1419',
-        panel: '#171c24',
-        panel2: '#1e242e',
-        line: '#2a3340',
-        teal: '#4fd1c5',
-        navy: '#5b8def',
-        dim: '#93a1b3',
-        ok: '#5ad19a',
-        warn: '#f0a868',
-        bad: '#f07a7a',
+        // Toss light theme — keep token names, replace values
+        bg: '#ffffff',
+        panel: '#ffffff',
+        panel2: '#f2f4f6',
+        line: '#e5e8eb',
+        teal: '#3182f6',   // Toss Blue — CTA, active, key numbers
+        navy: '#1a6fd8',   // Toss Blue darker (hover / focus)
+        dim: '#8b95a1',
+        ok: '#1bbf76',
+        warn: '#ff9500',
+        bad: '#f04452',
+        // Extra surface tokens
+        surface: '#f9fafb',
+        body: '#191f28',
+        sub: '#4e5968',
       },
       fontFamily: {
         sans: ['Pretendard', '-apple-system', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        '4xl': '2rem',
       },
     },
   },

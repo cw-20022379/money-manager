@@ -16,7 +16,7 @@ export function PushSettings() {
     try {
       const s = await enablePush();
       setStatus(s);
-      if (s === 'subscribed') toast.push('🔔 푸시 알림을 켰어요');
+      if (s === 'subscribed') toast.push('푸시 알림을 켰어요');
       else if (s === 'denied') toast.push('브라우저 알림 권한이 거부됨', 'warn');
       else if (s === 'unsupported') toast.push('이 브라우저는 푸시 미지원', 'warn');
     } catch (e: unknown) {
@@ -38,18 +38,18 @@ export function PushSettings() {
   }
 
   return (
-    <div className="rounded-md border border-line bg-panel px-3 py-2 text-sm">
-      <div className="flex items-center justify-between">
-        <span>🔔 푸시 알림</span>
+    <div className="flex items-center justify-between px-4 py-3.5 text-sm">
+      <span className="font-medium text-body">🔔 푸시 알림</span>
+      <div>
         {status === 'subscribed' && (
           <button disabled={busy} onClick={turnOff}
-            className="rounded border border-line px-2 py-0.5 text-xs text-dim">
+            className="rounded-full border border-line px-3 py-1 text-xs font-medium text-dim">
             끄기
           </button>
         )}
         {(status === 'default' || status === 'granted') && (
           <button disabled={busy} onClick={turnOn}
-            className="rounded bg-teal px-2 py-0.5 text-xs font-semibold text-bg">
+            className="rounded-full bg-teal px-3 py-1 text-xs font-bold text-white">
             켜기
           </button>
         )}
@@ -60,9 +60,6 @@ export function PushSettings() {
           <span className="text-xs text-dim">브라우저 미지원</span>
         )}
       </div>
-      {status === 'subscribed' && (
-        <div className="mt-1 text-xs text-dim">앱을 닫아도 배우자 변경 시 푸시가 옵니다.</div>
-      )}
     </div>
   );
 }

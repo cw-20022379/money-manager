@@ -61,7 +61,7 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
         onDone();
         return;
       }
-      setPendingPatch(patch);  // ReasonModal 띄움
+      setPendingPatch(patch);
       return;
     }
     setBusy(true);
@@ -104,7 +104,6 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // 추천 사유: 잔액 / 별명 / 종류 변경 → 가족에 알림, 그 외 → 기록만
   const recommend: 'LIFE_EVENT' | 'CORRECTION' = (() => {
     if (!initial) return 'LIFE_EVENT';
     const patch = detectChanges();
@@ -114,7 +113,7 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
 
   return (
     <>
-      <form onSubmit={submit} className="space-y-3 text-sm">
+      <form onSubmit={submit} className="space-y-4 text-sm">
         <Field label="은행">
           <InstitutionSelect
             presets={BANK_PRESETS}
@@ -129,7 +128,11 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
             {TYPES.map((t) => (
               <button
                 key={t.v} type="button" onClick={() => setType(t.v)}
-                className={`rounded-md border px-3 py-1.5 ${type === t.v ? 'border-teal text-teal' : 'border-line text-dim'}`}
+                className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+                  type === t.v
+                    ? 'border-teal bg-teal/5 text-teal'
+                    : 'border-line text-dim'
+                }`}
               >{t.t}</button>
             ))}
           </div>
@@ -138,7 +141,7 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
         <Field label="별명 (예: 주거래, 비상금)">
           <input
             required value={nickname} onChange={(e) => setNickname(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2"
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-body outline-none focus:border-teal"
           />
         </Field>
 
@@ -148,7 +151,7 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
             value={accountNum}
             onChange={(e) => setAccountNum(normalizeAccountNumber(e.target.value))}
             placeholder="11034567890"
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2 font-mono"
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 font-mono text-body outline-none focus:border-teal"
           />
         </Field>
 
@@ -156,26 +159,26 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
           <input
             value={balance} onChange={(e) => setBalance(e.target.value)}
             inputMode="numeric" placeholder="0"
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2 text-right"
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-right text-body outline-none focus:border-teal"
           />
         </Field>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-1">
           {isEdit && onDelete && (
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-md border border-bad px-3 py-2.5 text-sm text-bad"
+              className="rounded-xl border border-bad/40 px-4 py-3 text-sm font-medium text-bad"
             >해지</button>
           )}
           <button
             disabled={busy || !institution} type="submit"
-            className="flex-1 rounded-md bg-teal py-2.5 font-semibold text-bg disabled:opacity-50"
+            className="flex-1 rounded-xl bg-teal py-3 font-bold text-white disabled:opacity-40"
           >
             {busy ? '저장 중...' : isEdit ? '변경 사항 확인' : '저장'}
           </button>
         </div>
-        {err && <p className="text-xs text-warn">{err}</p>}
+        {err && <p className="text-xs text-bad">{err}</p>}
       </form>
 
       {pendingPatch && initial && (
@@ -201,7 +204,7 @@ export function AccountForm({ initial, onDone, onDelete }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-dim">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium text-dim">{label}</label>
       {children}
     </div>
   );

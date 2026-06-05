@@ -11,7 +11,6 @@ interface DraftFlow {
 
 /**
  * P6: 홈 진입 시 초안(is_draft=true) 1건 이상이면 "이어서 작성?" 모달.
- * 클릭 시 sessionStorage에 id 저장 + /list 이동 → List가 자동으로 편집 모달 오픈.
  */
 export function DraftResumeBanner() {
   const [drafts, setDrafts] = useState<DraftFlow[] | null>(null);
@@ -29,16 +28,17 @@ export function DraftResumeBanner() {
   const ago = friendlyAgo(first.created_at);
 
   return (
-    <Modal title="↪️ 작성 중이던 항목이 있어요" onClose={() => setDismissed(true)}>
-      <div className="rounded-md bg-panel2 p-3 text-sm">
-        <div><b className="text-teal">{first.merchant_name}</b> <span className="text-dim">· 시작: {ago}</span></div>
+    <Modal title="작성 중이던 항목이 있어요" onClose={() => setDismissed(true)}>
+      <div className="mb-4 rounded-2xl bg-surface p-4 text-sm">
+        <div className="font-bold text-body">{first.merchant_name}</div>
+        <div className="mt-0.5 text-xs text-dim">시작: {ago}</div>
         {drafts.length > 1 && (
           <div className="mt-1 text-xs text-dim">외 {drafts.length - 1}건의 초안</div>
         )}
       </div>
-      <div className="mt-4 flex gap-2">
+      <div className="flex gap-2">
         <button onClick={() => setDismissed(true)}
-          className="flex-1 rounded-md border border-line py-2 text-sm">
+          className="flex-1 rounded-xl border border-line py-3 text-sm font-medium text-sub">
           나중에
         </button>
         <button
@@ -46,7 +46,7 @@ export function DraftResumeBanner() {
             sessionStorage.setItem('ffn:edit-flow', first.id);
             navigate('/list');
           }}
-          className="flex-[2] rounded-md bg-teal py-2 font-semibold text-bg">
+          className="flex-[2] rounded-xl bg-teal py-3 font-bold text-white">
           이어서 작성
         </button>
       </div>

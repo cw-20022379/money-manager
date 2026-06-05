@@ -95,35 +95,35 @@ export function CashflowCalendar({ flows }: Props) {
   return (
     <div className="space-y-3">
       {/* 헤더: 월 이동 + 요약 */}
-      <header className="flex items-center justify-between rounded-xl border border-line bg-panel p-3">
+      <header className="flex items-center justify-between rounded-2xl border border-line bg-bg p-4">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCursor(new Date(year, month - 1, 1))}
-            className="rounded-md border border-line px-2 py-1 text-sm text-dim hover:border-teal"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-panel2 text-sm text-dim"
           >‹</button>
-          <div className="min-w-[100px] text-center text-sm font-semibold text-teal">{monthLabel}</div>
+          <div className="min-w-[110px] text-center text-sm font-bold text-body">{monthLabel}</div>
           <button
             onClick={() => setCursor(new Date(year, month + 1, 1))}
-            className="rounded-md border border-line px-2 py-1 text-sm text-dim hover:border-teal"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-panel2 text-sm text-dim"
           >›</button>
           {!isCurrentMonth && (
             <button
               onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
-              className="ml-1 rounded-md bg-teal/20 px-2 py-1 text-xs text-teal"
+              className="ml-1 rounded-full bg-teal/10 px-2.5 py-1 text-xs font-medium text-teal"
             >오늘</button>
           )}
         </div>
         <div className="text-right text-xs">
           <div className="text-dim">월 합계</div>
-          <div className="font-semibold">{krw(monthTotal)}</div>
+          <div className="font-bold text-body">{krw(monthTotal)}</div>
           {remaining != null && (
-            <div className="text-warn">남은 {krw(remaining)}</div>
+            <div className="font-medium text-warn">남은 {krw(remaining)}</div>
           )}
         </div>
       </header>
 
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-dim">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-dim">
         {WEEKDAYS.map((w, i) => (
           <div key={w} className={i === 0 ? 'text-bad' : i === 6 ? 'text-teal' : ''}>{w}</div>
         ))}
@@ -132,7 +132,7 @@ export function CashflowCalendar({ flows }: Props) {
       {/* 그리드 */}
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, i) => {
-          if (cell.pad) return <div key={i} className="aspect-square rounded-md bg-panel/30" />;
+          if (cell.pad) return <div key={i} className="aspect-square rounded-xl bg-surface" />;
           const day = cell.day!;
           const sum = sumByDay.get(day) ?? 0;
           const items = byDay.get(day) ?? [];
@@ -144,21 +144,21 @@ export function CashflowCalendar({ flows }: Props) {
             <button
               key={i}
               onClick={() => setSelectedDay(isSelected ? null : day)}
-              className={`flex aspect-square flex-col items-stretch justify-between rounded-md border p-1 text-left text-[10px] ${
+              className={`flex aspect-square flex-col items-stretch justify-between rounded-xl border p-1 text-left text-[10px] transition-colors ${
                 isSelected ? 'border-teal bg-teal/10'
-                  : isToday ? 'border-teal/50 bg-panel'
-                    : items.length > 0 ? `${tone.border} bg-panel`
-                      : 'border-line/40 bg-panel/40'
+                  : isToday ? 'border-teal/40 bg-white'
+                    : items.length > 0 ? `${tone.border} bg-white`
+                      : 'border-line/50 bg-surface'
               }`}
             >
-              <div className={`flex items-center justify-between ${isToday ? 'text-teal font-semibold' : 'text-dim'}`}>
+              <div className={`flex items-center justify-between ${isToday ? 'text-teal font-bold' : 'text-dim'}`}>
                 <span>{day}</span>
                 {items.length > 0 && (
-                  <span className={`rounded-full px-1 ${tone.dot}`}>{items.length}</span>
+                  <span className={`rounded-full px-1 text-[9px] ${tone.dot}`}>{items.length}</span>
                 )}
               </div>
               {items.length > 0 && (
-                <div className={`text-right text-[10px] leading-tight ${tone.text}`}>
+                <div className={`text-right text-[9px] leading-tight font-medium ${tone.text}`}>
                   {krwShort(sum)}
                 </div>
               )}
@@ -169,17 +169,17 @@ export function CashflowCalendar({ flows }: Props) {
 
       {/* 선택된 날짜 상세 */}
       {selectedDay != null && (
-        <section className="rounded-xl border border-teal/50 bg-panel p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-semibold text-teal">
+        <section className="rounded-2xl border border-teal/30 bg-bg p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-sm font-bold text-body">
               {monthLabel} {selectedDay}일 빠질 돈
             </div>
-            <button onClick={() => setSelectedDay(null)} className="text-xs text-dim">닫기 ✕</button>
+            <button onClick={() => setSelectedDay(null)} className="text-xs text-dim">닫기</button>
           </div>
           {selected.length === 0 ? (
             <div className="py-2 text-center text-xs text-dim">이 날 빠질 돈은 없어요.</div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {selected.map((f) => (
                 <button
                   key={f.id}
@@ -187,21 +187,21 @@ export function CashflowCalendar({ flows }: Props) {
                     sessionStorage.setItem('ffn:edit-flow', f.id);
                     navigate('/list');
                   }}
-                  className="flex w-full items-center justify-between rounded-md border border-line bg-panel2 px-2 py-1.5 text-left text-sm hover:border-teal"
+                  className="flex w-full items-center justify-between rounded-xl border border-line bg-surface px-3 py-2.5 text-left transition-colors active:bg-line"
                 >
                   <div>
-                    <div>{f.merchant_name}</div>
+                    <div className="text-sm font-semibold text-body">{f.merchant_name}</div>
                     <div className="text-[11px] text-dim">{CATEGORY_LABEL[f.category]}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm">{f.amount_is_variable ? '변동' : krw(f.amount_krw)}</div>
+                    <div className="text-sm font-bold text-body">{f.amount_is_variable ? '변동' : krw(f.amount_krw)}</div>
                     <div className="text-[10px] text-dim">{f.source_card_id ? '💳 카드' : '🏦 자동이체'}</div>
                   </div>
                 </button>
               ))}
-              <div className="mt-1 flex justify-between border-t border-line pt-1.5 text-xs">
+              <div className="mt-1 flex justify-between border-t border-line pt-2 text-xs">
                 <span className="text-dim">합계</span>
-                <span className="font-semibold text-teal">{krw(sumByDay.get(selectedDay) ?? 0)}</span>
+                <span className="font-bold text-teal">{krw(sumByDay.get(selectedDay) ?? 0)}</span>
               </div>
             </div>
           )}
@@ -209,7 +209,7 @@ export function CashflowCalendar({ flows }: Props) {
       )}
 
       {flows.length > 0 && byDay.size === 0 && (
-        <div className="rounded-xl border border-dashed border-line bg-panel/40 p-4 text-center text-xs text-dim">
+        <div className="rounded-2xl border border-dashed border-line bg-surface p-4 text-center text-xs text-dim">
           이번 달은 모두 초안이라 표시할 항목이 없어요.
         </div>
       )}
@@ -218,8 +218,8 @@ export function CashflowCalendar({ flows }: Props) {
 }
 
 function cellTone(sum: number): { border: string; dot: string; text: string } {
-  if (sum >= 100_000) return { border: 'border-bad/50', dot: 'bg-bad/30 text-bad', text: 'text-bad' };
-  if (sum >= 50_000) return { border: 'border-warn/50', dot: 'bg-warn/30 text-warn', text: 'text-warn' };
-  if (sum > 0) return { border: 'border-teal/40', dot: 'bg-teal/20 text-teal', text: 'text-teal' };
+  if (sum >= 100_000) return { border: 'border-bad/40', dot: 'bg-bad/20 text-bad', text: 'text-bad' };
+  if (sum >= 50_000) return { border: 'border-warn/40', dot: 'bg-warn/20 text-warn', text: 'text-warn' };
+  if (sum > 0) return { border: 'border-teal/30', dot: 'bg-teal/15 text-teal', text: 'text-teal' };
   return { border: 'border-line', dot: 'bg-panel2 text-dim', text: 'text-dim' };
 }

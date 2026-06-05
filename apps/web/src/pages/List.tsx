@@ -53,7 +53,6 @@ export function List() {
   }, [refresh]);
 
   // sessionStorage로 전달된 "특정 항목 편집" 요청
-  // (P6 인터럽트 복귀 / 관계도 노드 클릭에서 사용)
   useEffect(() => {
     const flowId = sessionStorage.getItem('ffn:edit-flow');
     if (flowId && flows.length > 0) {
@@ -99,7 +98,12 @@ export function List() {
 
   return (
     <div className="space-y-3 p-4 pb-24">
-      <div className="flex gap-1 rounded-lg bg-panel p-1 text-sm">
+      <div className="pt-2">
+        <h1 className="text-2xl font-bold tracking-tight text-body">목록</h1>
+      </div>
+
+      {/* Toss-style segmented control */}
+      <div className="flex gap-1 rounded-xl bg-panel2 p-1 text-sm">
         <Seg active={tab === 'flows'} onClick={() => setTab('flows')}>정기지출 {flows.length}</Seg>
         <Seg active={tab === 'accounts'} onClick={() => setTab('accounts')}>계좌 {accounts.length}</Seg>
         <Seg active={tab === 'cards'} onClick={() => setTab('cards')}>카드 {cards.length}</Seg>
@@ -114,8 +118,11 @@ export function List() {
           {accounts.length === 0 && <Empty>계좌가 비어있어요. + 버튼으로 등록하세요.</Empty>}
           {accounts.map((a) => (
             <button key={a.id} onClick={() => setEdit({ kind: 'edit-account', account: a })}
-              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-              <div className="text-sm">{a.institution_name} · <span className="text-teal">{a.nickname}</span></div>
+              className="block w-full rounded-2xl border border-line bg-bg p-4 text-left transition-colors active:bg-surface">
+              <div className="text-sm font-semibold text-body">
+                {a.institution_name}
+                <span className="ml-1.5 text-teal">{a.nickname}</span>
+              </div>
               <div className="mt-1 text-xs text-dim">잔액 {krw(a.balance_krw)}</div>
             </button>
           ))}
@@ -126,8 +133,11 @@ export function List() {
           {cards.length === 0 && <Empty>카드가 비어있어요.</Empty>}
           {cards.map((c) => (
             <button key={c.id} onClick={() => setEdit({ kind: 'edit-card', card: c })}
-              className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-              <div className="text-sm">{c.issuer_name} · <span className="text-teal">{c.product_name}</span></div>
+              className="block w-full rounded-2xl border border-line bg-bg p-4 text-left transition-colors active:bg-surface">
+              <div className="text-sm font-semibold text-body">
+                {c.issuer_name}
+                <span className="ml-1.5 text-teal">{c.product_name}</span>
+              </div>
               {c.payment_due_day && (
                 <div className="mt-1 text-xs text-dim">결제일 매월 {c.payment_due_day}일</div>
               )}
@@ -136,10 +146,11 @@ export function List() {
         </div>
       )}
 
+      {/* FAB: Toss-style large blue button */}
       <button
         onClick={() => setEdit({ kind: 'new', type: tab })}
-        className="fixed bottom-20 right-6 z-30 rounded-full bg-teal px-5 py-3 text-bg shadow-lg"
-      >+ 새로 등록</button>
+        className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-teal text-2xl text-white shadow-[0_4px_16px_rgba(49,130,246,0.4)] transition-opacity active:opacity-80"
+      >+</button>
 
       {edit?.kind === 'new' && edit.type === 'accounts' && (
         <Modal title="🏦 계좌 등록" onClose={() => setEdit(null)}>
@@ -213,7 +224,9 @@ export function List() {
 function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`flex-1 rounded-md py-2 ${active ? 'bg-bg text-teal' : 'text-dim'}`}>
+      className={`flex-1 rounded-lg py-2 font-medium transition-colors ${
+        active ? 'bg-bg text-teal shadow-sm' : 'text-dim'
+      }`}>
       {children}
     </button>
   );
@@ -221,8 +234,9 @@ function Seg({ active, onClick, children }: { active: boolean; onClick: () => vo
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-panel/40 p-4 text-center text-sm text-dim">
-      {children}
+    <div className="rounded-2xl border border-dashed border-line bg-surface p-8 text-center">
+      <div className="mb-1 text-base font-bold text-body">비어있어요</div>
+      <p className="text-sm text-dim">{children}</p>
     </div>
   );
 }
@@ -231,7 +245,12 @@ function FlowList({ flows, cards, accounts, onTap }: {
   flows: Flow[]; cards: Card[]; accounts: Account[]; onTap: (f: Flow) => void;
 }) {
   if (flows.length === 0)
-    return <Empty>정기지출이 비어있어요. + 버튼으로 첫 항목을 등록하세요.</Empty>;
+    return (
+      <div className="rounded-2xl border border-dashed border-line bg-surface p-8 text-center">
+        <div className="mb-2 text-base font-bold text-body">정기지출이 비어있어요</div>
+        <p className="text-sm text-dim">+ 버튼으로 첫 항목을 등록하세요.</p>
+      </div>
+    );
 
   const sorted = [...flows].sort((a, b) => {
     if (a.is_draft !== b.is_draft) return a.is_draft ? -1 : 1;
@@ -251,21 +270,23 @@ function FlowList({ flows, cards, accounts, onTap }: {
             : `🏦 ${src.institution_name} ${src.nickname}`;
         return (
           <button key={f.id} onClick={() => onTap(f)}
-            className="block w-full rounded-xl border border-line bg-panel p-3 text-left hover:border-teal">
-            <div className="flex items-baseline justify-between gap-2">
+            className="block w-full rounded-2xl border border-line bg-bg p-4 text-left transition-colors active:bg-surface">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Severity amount={f.amount_krw} draft={f.is_draft} />
-                <span className="font-semibold">{f.merchant_name}</span>
-                {f.is_draft && <span className="rounded bg-warn/20 px-1.5 text-[10px] text-warn">초안</span>}
+                <span className="font-bold text-body">{f.merchant_name}</span>
+                {f.is_draft && (
+                  <span className="rounded-full bg-[#fff3e0] px-2 py-0.5 text-[10px] font-bold text-warn">초안</span>
+                )}
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold">
+                <div className="text-sm font-bold text-body">
                   {f.amount_is_variable ? '변동' : krw(f.amount_krw)}
                 </div>
                 <div className="text-xs text-dim">매월 {f.schedule_day}일</div>
               </div>
             </div>
-            <div className="mt-1 text-xs text-dim">{CATEGORY_LABEL[f.category]} · {srcLabel}</div>
+            <div className="mt-1.5 text-xs text-dim">{CATEGORY_LABEL[f.category]} · {srcLabel}</div>
           </button>
         );
       })}
