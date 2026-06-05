@@ -8,39 +8,36 @@
 
 ## 0. 전체 구성도
 
+```mermaid
+flowchart TB
+    U["👨‍👩‍👧 가족 모바일/데스크탑"]
+    U -->|HTTPS| V
+
+    subgraph FRONT["🌐 Vercel · 무료 100 GB/월"]
+        V["React PWA<br/>family-finance.vercel.app"]
+    end
+
+    V -->|/api/* 요청| R
+
+    subgraph API["⚙️ Render Free · 무료 750h/월"]
+        R["Node Fastify API<br/>family-finance-api.onrender.com<br/>━━━━━━━━━━━━━━<br/>15분 idle 후 sleep<br/>cold start 30~60초"]
+    end
+
+    R -->|REST / WebSocket| S
+
+    subgraph BAAS["🗄️ Supabase Free · 무료"]
+        S[("Postgres + Auth + Realtime<br/>xxx.supabase.co<br/>━━━━━━━━━━━━━━<br/>500 MB DB · 50k MAU · 2 GB egress")]
+    end
+
+    GHA["⏰ GitHub Actions<br/>keepalive cron<br/>KST 07~23시<br/>2,000분/월"]
+    GHA -.->|매 10분 핑| R
+
+    style FRONT fill:#1e3a2a,stroke:#5ad19a
+    style API fill:#3a2e1e,stroke:#f0a868
+    style BAAS fill:#1e2e3a,stroke:#5b8def
 ```
-┌────────────────────────── 무료 인프라 ─────────────────────────┐
-│                                                                │
-│  [가족 모바일/데스크탑]                                         │
-│         │                                                       │
-│         ▼ HTTPS                                                 │
-│  ┌─────────────────┐                                            │
-│  │ Vercel          │ ← 정적 호스팅 (React PWA)                 │
-│  │ family-finance  │   100 GB/월 · 600 빌드/월                  │
-│  │ .vercel.app     │                                            │
-│  └────────┬────────┘                                            │
-│           │ /api/* 요청                                         │
-│           ▼                                                     │
-│  ┌─────────────────┐                                            │
-│  │ Render Free     │ ← Node Fastify API                        │
-│  │ family-finance- │   750h/월 · 15분 idle 후 sleep             │
-│  │ api.onrender    │   (cold start 30~60초)                     │
-│  └────────┬────────┘                                            │
-│           │ JDBC / REST                                         │
-│           ▼                                                     │
-│  ┌─────────────────┐                                            │
-│  │ Supabase Free   │ ← Postgres + Auth + Realtime              │
-│  │ xxx.supabase.co │   500 MB DB · 50,000 MAU · 2 GB egress    │
-│  └─────────────────┘                                            │
-│                                                                 │
-│  ┌─────────────────┐                                            │
-│  │ GitHub Actions  │ ← keepalive cron (KST 07~23시)            │
-│  │                 │   2,000분/월 (private)                     │
-│  └─────────────────┘                                            │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-   합계: ₩0 / 월  (단, 한도 초과 시 자동 차단되도록 알람 권장)
-```
+
+**합계: 월 ₩0** — 단, 한도 초과 시 자동 차단되도록 알람 권장 (§9 비용 모니터링 참고).
 
 ---
 
@@ -365,12 +362,32 @@ SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
 
 ## 8. 첫 사용자(부부 2명) 등록 시나리오
 
-배포된 사이트에서:
+```mermaid
+sequenceDiagram
+    autonumber
+    participant H as 👨 박성훈 (OWNER)
+    participant W as 🌐 family-finance.vercel.app
+    participant S as 🗄️ Supabase Cloud
+    participant J as 👩 김지원 (MEMBER)
 
-1. **본인 (예: 박성훈)**: 회원가입 → 메일함에서 confirm → 로그인 → "가족 만들기" → "박씨네"
-2. 홈에서 "초대 토큰 만들기" → 카카오톡으로 배우자에게 전달
-3. **배우자 (예: 김지원)**: 회원가입 → confirm → 로그인 → "초대 링크로 합류" → 토큰 + 본인 이름 입력
-4. 양쪽 모두 등록 → Studio에서 `memberships` 테이블 → 동일 `family_id`로 묶임 확인
+    H->>W: 회원가입 (이메일·비밀번호)
+    W->>S: signUp
+    S-->>H: 가입 확인 메일 발송
+    H->>S: 메일 confirm 링크 클릭
+    H->>W: 로그인 → "가족 만들기" (박씨네)
+    W->>S: INSERT families + memberships(OWNER)
+    H->>W: 홈 → "초대 토큰 만들기"
+    W->>S: INSERT invite_tokens (7d TTL)
+    H-->>J: 카카오톡으로 토큰 전달
+    J->>W: 회원가입 → confirm → 로그인
+    J->>W: "초대 링크로 합류" (토큰 입력)
+    W->>S: 토큰 검증 + INSERT memberships(MEMBER)
+    Note over H,J: 두 사용자 같은 family_id로 묶임
+    H->>W: 정기지출 등록
+    S-->>J: Realtime 토스트 알림
+```
+
+검증: Studio → `memberships` 테이블 → 두 row가 동일 `family_id`인지 확인.
 
 ---
 
@@ -435,18 +452,16 @@ iOS 16.4 이상 + PWA 홈 화면 설치 + 권한 허용 필요. 시뮬레이터�
 
 ## 11. 일상 배포 흐름
 
-```
-1. 로컬에서 작업
-   ↓
-2. git push origin main
-   ↓
-3. Vercel 자동 배포 (~2분, 프론트엔드)
-   Render 자동 배포 (~5분, 백엔드)
-   ↓
-4. 배포 URL에서 확인
+```mermaid
+flowchart LR
+    L["💻 로컬에서 작업"] --> P["git push origin main"]
+    P --> V["Vercel 자동 배포<br/>~2분 (프론트엔드)"]
+    P --> R["Render 자동 배포<br/>~5분 (백엔드)"]
+    V --> OK(["🌐 배포 URL 확인"])
+    R --> OK
 ```
 
-PR 브랜치 push → Vercel Preview URL 자동 생성 (https://money-manager-git-xxx-yourname.vercel.app).
+**PR 브랜치 push** 시 Vercel Preview URL 자동 생성: `https://money-manager-git-<branch>-<user>.vercel.app`
 
 ---
 

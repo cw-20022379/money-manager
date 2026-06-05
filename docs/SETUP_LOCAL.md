@@ -8,21 +8,14 @@
 
 ## 0. 한눈에 보는 흐름
 
-```
-1. 도구 설치        2. 코드 가져오기      3. 백엔드 띄우기        4. 앱 실행
-┌───────────┐      ┌────────────┐       ┌──────────────┐       ┌─────────┐
-│ Git       │      │ git clone  │       │ Docker 시작  │       │ pnpm    │
-│ Node 20   │ ───▶ │ pnpm       │ ───▶  │ supabase     │ ───▶  │ install │
-│ pnpm      │      │ install    │       │ start        │       │ pnpm    │
-│ Docker    │      │            │       │ db reset     │       │ dev     │
-│ Supabase  │      │            │       │              │       │         │
-│ CLI       │      │            │       │              │       │         │
-└───────────┘      └────────────┘       └──────────────┘       └─────────┘
-                                                                    │
-                                                       ┌────────────┴───────┐
-                                                       │ 브라우저 접속      │
-                                                       │ http://127.0.0.1:5173 │
-                                                       └────────────────────┘
+```mermaid
+flowchart LR
+    A["1. 도구 설치<br/>Git · Node 20<br/>pnpm · Docker<br/>Supabase CLI"]
+    B["2. 코드 가져오기<br/>git clone<br/>pnpm install"]
+    C["3. 백엔드 띄우기<br/>Docker 시작<br/>supabase start<br/>db reset"]
+    D["4. 앱 실행<br/>pnpm dev<br/>(api:3000 + web:5173)"]
+    E(["🌐 브라우저 접속<br/>http://127.0.0.1:5173"])
+    A --> B --> C --> D --> E
 ```
 
 ---
@@ -301,6 +294,34 @@ apps/api dev: [HH:MM:SS] INFO: Server listening at http://127.0.0.1:3000
 ---
 
 ## 5. 동작 검증 (5분 체크리스트)
+
+전체 흐름 한눈에:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 👨 사용자 A (일반 창)
+    participant W as 🌐 Web (:5173)
+    participant M as 📧 Mailpit (:54324)
+    participant B as 👩 사용자 B (시크릿 창)
+
+    A->>W: 계정 만들기 (이메일·비밀번호)
+    W->>M: 가입 확인 메일 전송
+    A->>M: "Confirm your mail" 클릭
+    A->>W: 로그인 → 가족 만들기 (박씨네)
+    A->>W: 홈 → "초대 토큰 만들기"
+    A-->>B: 토큰 전달 (카톡 등)
+    B->>W: 시크릿 창에서 가입
+    B->>M: confirm
+    B->>W: 로그인 → "초대 링크로 합류" (토큰 입력)
+    Note over A,B: 부부 같은 family_id로 묶임
+    A->>W: 목록 → 계좌·카드·정기지출 등록
+    W-->>B: 🔔 Realtime 토스트<br/>"배우자가 ...을(를) 등록했어요"
+    A->>W: 흐름도 → 트리 펼침 확인
+    A->>W: 홈 → 이번달 합산 카드 확인
+```
+
+체크리스트:
 
 1. http://127.0.0.1:5173 → "계정 만들기" → 이메일·비밀번호 입력
 2. http://127.0.0.1:54324 (Mailpit) → 가입 확인 메일의 "Confirm your mail" 링크 클릭
