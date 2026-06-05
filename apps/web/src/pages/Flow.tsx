@@ -1,0 +1,134 @@
+import { useEffect, useState } from 'react';
+import { api } from '../lib/api.js';
+import { krw, krwShort } from '../lib/format.js';
+import { CATEGORY_LABEL, type Category } from '@ffn/shared';
+
+interface FlowNode {
+  id: string;
+  merchant_name: string;
+  category: Category;
+  amount_krw: number | null;
+  schedule_day: number;
+  is_draft: boolean;
+}
+interface CardNode {
+  kind: 'CARD';
+  id: string; product_name: string; issuer_name: string;
+  monthly_sum: number;
+  children: FlowNode[];
+}
+interface AccountNode {
+  kind: 'ACCOUNT';
+  id: string; nickname: string; institution_name: string; balance_krw: number | null;
+  monthly_sum: number;
+  cards: CardNode[];
+  direct_flows: FlowNode[];
+}
+interface GraphData {
+  tree: AccountNode[];
+  orphan_cards: { id: string; product_name: string; issuer_name: string }[];
+  summary: { fixed_sum: number; active_count: number; draft_count: number };
+}
+
+export function Flow() {
+  const [data, setData] = useState<GraphData | null>(null);
+  useEffect(() => {
+    const load = () => api<GraphData>('/api/graph').then(setData).catch(console.error);
+    load();
+    window.addEventListener('ffn:data-changed', load);
+    return () => window.removeEventListener('ffn:data-changed', load);
+  }, []);
+
+  return (
+    <div className="space-y-3 p-4 pb-24">
+      <h1 className="text-xl text-teal">🌊 흐름도</h1>
+      {!data && <div className="text-dim">불러오는 중...</div>}
+      {data && data.tree.length === 0 && data.orphan_cards.length === 0 && (
+        <div className="rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-dim">
+          아직 비어있어요. <br />목록 탭에서 계좌·카드·정기지출을 등록하면<br />여기에 흐름이 채워집니다.
+        </div>
+      )}
+      <div className="space-y-2">
+        {data?.tree.map((acc) => <AccountTree key={acc.id} node={acc} />)}
+      </div>
+      {data && data.orphan_cards.length > 0 && (
+        <section className="rounded-xl border border-line bg-panel p-3">
+          <div className="mb-2 text-xs text-dim">결제계좌 연결 없는 카드</div>
+          <div className="space-y-1 text-sm">
+            {data.orphan_cards.map((c) => (
+              <div key={c.id}>💳 {c.issuer_name} {c.product_name}</div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function AccountTree({ node }: { node: AccountNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="rounded-xl border border-line bg-panel p-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <div>
+          <div className="text-sm">🏦 <span className="text-teal">{node.institution_name}</span> {node.nickname}</div>
+          <div className="text-xs text-dim">
+            잔액 {krw(node.balance_krw)} · 매월 {krwShort(node.monthly_sum)}원 빠짐
+          </div>
+        </div>
+        <span className="text-dim">{open ? '▾' : '▸'}</span>
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2 border-l border-line pl-3">
+          {node.cards.map((card) => <CardTree key={card.id} node={card} />)}
+          {node.direct_flows.map((f) => <FlowRow key={f.id} flow={f} />)}
+          {node.cards.length === 0 && node.direct_flows.length === 0 && (
+            <div className="py-1 text-xs text-dim">연결된 카드·자동이체 없음</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CardTree({ node }: { node: CardNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between py-1 text-left">
+        <div className="text-sm">💳 <span className="text-teal">{node.issuer_name}</span> {node.product_name}</div>
+        <div className="flex items-center gap-2 text-xs text-dim">
+          매월 {krwShort(node.monthly_sum)}원
+          <span>{open ? '▾' : '▸'}</span>
+        </div>
+      </button>
+      {open && (
+        <div className="ml-3 mt-1 space-y-1 border-l border-line pl-3">
+          {node.children.length === 0
+            ? <div className="text-xs text-dim">등록된 정기지출 없음</div>
+            : node.children.map((f) => <FlowRow key={f.id} flow={f} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FlowRow({ flow }: { flow: FlowNode }) {
+  return (
+    <div className="flex items-center justify-between py-1 text-sm">
+      <div className="flex items-center gap-2">
+        <span>{flow.is_draft ? '⚪' : '•'}</span>
+        <span>{flow.merchant_name}</span>
+        <span className="text-xs text-dim">{CATEGORY_LABEL[flow.category]}</span>
+      </div>
+      <div className="text-right text-xs text-dim">
+        <div>{krw(flow.amount_krw)}</div>
+        <div>매월 {flow.schedule_day}일</div>
+      </div>
+    </div>
+  );
+}

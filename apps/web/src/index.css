@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    background: #0f1419;
+    color: #e6edf3;
+    font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* 모바일 더블탭 줌 차단 */
+    touch-action: manipulation;
+  }
+  /* 일부 브라우저에서 ul/li 마커가 보이는 케이스 강제 차단 */
+  ul, ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  li::marker {
+    content: '';
+  }
+}
