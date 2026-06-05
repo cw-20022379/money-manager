@@ -52,17 +52,39 @@ export function List() {
     return () => window.removeEventListener('ffn:data-changed', handler);
   }, [refresh]);
 
-  // sessionStorage로 전달된 "특정 flow 편집" 요청 (P6 인터럽트 복귀)
+  // sessionStorage로 전달된 "특정 항목 편집" 요청
+  // (P6 인터럽트 복귀 / 관계도 노드 클릭에서 사용)
   useEffect(() => {
-    const draftId = sessionStorage.getItem('ffn:edit-flow');
-    if (!draftId || flows.length === 0) return;
-    const target = flows.find((f) => f.id === draftId);
-    if (target) {
-      setTab('flows');
-      setEdit({ kind: 'edit-flow', flow: target });
-      sessionStorage.removeItem('ffn:edit-flow');
+    const flowId = sessionStorage.getItem('ffn:edit-flow');
+    if (flowId && flows.length > 0) {
+      const t = flows.find((f) => f.id === flowId);
+      if (t) {
+        setTab('flows');
+        setEdit({ kind: 'edit-flow', flow: t });
+        sessionStorage.removeItem('ffn:edit-flow');
+        return;
+      }
     }
-  }, [flows]);
+    const accountId = sessionStorage.getItem('ffn:edit-account');
+    if (accountId && accounts.length > 0) {
+      const t = accounts.find((a) => a.id === accountId);
+      if (t) {
+        setTab('accounts');
+        setEdit({ kind: 'edit-account', account: t });
+        sessionStorage.removeItem('ffn:edit-account');
+        return;
+      }
+    }
+    const cardId = sessionStorage.getItem('ffn:edit-card');
+    if (cardId && cards.length > 0) {
+      const t = cards.find((c) => c.id === cardId);
+      if (t) {
+        setTab('cards');
+        setEdit({ kind: 'edit-card', card: t });
+        sessionStorage.removeItem('ffn:edit-card');
+      }
+    }
+  }, [flows, accounts, cards]);
 
   function onSaved(kind: string) {
     setEdit(null);

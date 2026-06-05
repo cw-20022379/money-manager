@@ -1,37 +1,21 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
-import { CATEGORY_LABEL, type Category } from '@ffn/shared';
+import { CATEGORY_LABEL } from '@ffn/shared';
+import { RelationshipGraph, type GraphData } from '../features/RelationshipGraph.js';
 
-interface FlowNode {
-  id: string;
-  merchant_name: string;
-  category: Category;
-  amount_krw: number | null;
-  schedule_day: number;
-  is_draft: boolean;
-}
-interface CardNode {
-  kind: 'CARD';
-  id: string; product_name: string; issuer_name: string;
-  monthly_sum: number;
-  children: FlowNode[];
-}
-interface AccountNode {
-  kind: 'ACCOUNT';
-  id: string; nickname: string; institution_name: string; balance_krw: number | null;
-  monthly_sum: number;
-  cards: CardNode[];
-  direct_flows: FlowNode[];
-}
-interface GraphData {
-  tree: AccountNode[];
-  orphan_cards: { id: string; product_name: string; issuer_name: string }[];
-  summary: { fixed_sum: number; active_count: number; draft_count: number };
-}
+type FlowNode = GraphData['tree'][number]['cards'][number]['children'][number];
+type CardNode = GraphData['tree'][number]['cards'][number];
+type AccountNode = GraphData['tree'][number];
+
+type View = 'tree' | 'graph';
 
 export function Flow() {
   const [data, setData] = useState<GraphData | null>(null);
+  const [view, setView] = useState<View>(() =>
+    (sessionStorage.getItem('ffn:flow-view') as View) || 'tree',
+  );
+
   useEffect(() => {
     const load = () => api<GraphData>('/api/graph').then(setData).catch(console.error);
     load();
@@ -39,29 +23,57 @@ export function Flow() {
     return () => window.removeEventListener('ffn:data-changed', load);
   }, []);
 
+  function changeView(v: View) {
+    setView(v);
+    sessionStorage.setItem('ffn:flow-view', v);
+  }
+
   return (
     <div className="space-y-3 p-4 pb-24">
-      <h1 className="text-xl text-teal">🌊 흐름도</h1>
-      {!data && <div className="text-dim">불러오는 중...</div>}
-      {data && data.tree.length === 0 && data.orphan_cards.length === 0 && (
-        <div className="rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-dim">
-          아직 비어있어요. <br />목록 탭에서 계좌·카드·정기지출을 등록하면<br />여기에 흐름이 채워집니다.
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl text-teal">🌊 흐름도</h1>
+        <div className="flex gap-1 rounded-lg bg-panel p-1 text-xs">
+          <Seg active={view === 'tree'} onClick={() => changeView('tree')}>📋 트리</Seg>
+          <Seg active={view === 'graph'} onClick={() => changeView('graph')}>🕸 관계도</Seg>
         </div>
-      )}
-      <div className="space-y-2">
-        {data?.tree.map((acc) => <AccountTree key={acc.id} node={acc} />)}
-      </div>
-      {data && data.orphan_cards.length > 0 && (
-        <section className="rounded-xl border border-line bg-panel p-3">
-          <div className="mb-2 text-xs text-dim">결제계좌 연결 없는 카드</div>
-          <div className="space-y-1 text-sm">
-            {data.orphan_cards.map((c) => (
-              <div key={c.id}>💳 {c.issuer_name} {c.product_name}</div>
-            ))}
+      </header>
+
+      {!data && <div className="text-dim">불러오는 중...</div>}
+
+      {data && view === 'graph' && <RelationshipGraph data={data} />}
+
+      {data && view === 'tree' && (
+        <>
+          {data.tree.length === 0 && data.orphan_cards.length === 0 && (
+            <div className="rounded-xl border border-dashed border-line bg-panel/40 p-6 text-center text-sm text-dim">
+              아직 비어있어요. <br />목록 탭에서 계좌·카드·정기지출을 등록하면<br />여기에 흐름이 채워집니다.
+            </div>
+          )}
+          <div className="space-y-2">
+            {data.tree.map((acc) => <AccountTree key={acc.id} node={acc} />)}
           </div>
-        </section>
+          {data.orphan_cards.length > 0 && (
+            <section className="rounded-xl border border-line bg-panel p-3">
+              <div className="mb-2 text-xs text-dim">결제계좌 연결 없는 카드</div>
+              <div className="space-y-1 text-sm">
+                {data.orphan_cards.map((c) => (
+                  <div key={c.id}>💳 {c.issuer_name} {c.product_name}</div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={`rounded-md px-2.5 py-1 ${active ? 'bg-bg text-teal' : 'text-dim'}`}>
+      {children}
+    </button>
   );
 }
 
