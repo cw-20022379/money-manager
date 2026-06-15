@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
-import { CATEGORY_LABEL } from '@ffn/shared';
+import { CATEGORY_LABEL, CATEGORY_COLOR } from '@ffn/shared';
 import { RelationshipGraph, type GraphData } from '../features/RelationshipGraph.js';
 import { CashflowCalendar, type CalFlow } from '../features/CashflowCalendar.js';
 import { BillingCycle } from '../features/BillingCycle.js';
@@ -12,19 +12,6 @@ type AccountNode = GraphData['tree'][number];
 
 type View = 'tree' | 'graph' | 'calendar' | 'billing';
 const ALLOWED: readonly View[] = ['tree', 'graph', 'calendar', 'billing'];
-
-// 카테고리 컬러
-const CAT_COLORS: Record<string, string> = {
-  MEDIA: '#8b5cf6',
-  COMMUNICATION: '#3b82f6',
-  EDUCATION: '#f59e0b',
-  INSURANCE: '#00d2c4',
-  HOUSING: '#ef4444',
-  FOOD: '#f97316',
-  TRANSPORT: '#10b981',
-  HEALTH: '#ec4899',
-  OTHER: '#94a3b8',
-};
 
 // 미니 인라인 바 (카드/계좌 지출 비율 표시)
 function InlineBar({ value, max, color = '#00d2c4' }: { value: number; max: number; color?: string }) {
@@ -350,7 +337,7 @@ function CardTree({ node }: { node: CardNode }) {
 function FlowRow({ flow, isLast, indent }: {
   flow: FlowNode; isLast: boolean; indent?: boolean;
 }) {
-  const catColor = CAT_COLORS[flow.category] ?? '#94a3b8';
+  const catColor = CATEGORY_COLOR[flow.category] ?? '#94a3b8';
   return (
     <div
       className={`flex items-center justify-between px-3.5 py-2 text-sm ${!isLast ? 'border-b border-line/40' : ''} ${indent ? 'pl-12' : ''}`}

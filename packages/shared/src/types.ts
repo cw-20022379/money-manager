@@ -47,3 +47,18 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   HEALTHCARE: '의료·약값',
   OTHER: '기타',
 };
+
+// 카테고리별 색상 (차트·배지 공용 — Bank Salad 팔레트)
+export const CATEGORY_COLOR: Record<Category, string> = {
+  UTILITY: '#f59e0b',
+  TELECOM: '#3b82f6',
+  INSURANCE: '#14b8a6',
+  MEDIA: '#8b5cf6',
+  SAAS: '#ec4899',
+  EDUCATION: '#f97316',
+  LOAN: '#ef4444',
+  CARD_BILL: '#6366f1',
+  RENT: '#10b981',
+  HEALTHCARE: '#06b6d4',
+  OTHER: '#94a3b8',
+};

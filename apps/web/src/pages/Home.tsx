@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
+import { CATEGORY_COLOR, CATEGORY_LABEL, type Category } from '@ffn/shared';
 import { DraftResumeBanner } from '../features/DraftResumeModal.js';
 
 interface Me {
@@ -20,31 +21,6 @@ interface GraphSummary {
     cards: Array<{ product_name: string; monthly_sum: number }>;
   }>;
 }
-
-// 카테고리 색상 매핑 (뱅샐 팔레트)
-const CAT_COLORS: Record<string, string> = {
-  MEDIA: '#8b5cf6',
-  COMMUNICATION: '#3b82f6',
-  EDUCATION: '#f59e0b',
-  INSURANCE: '#00d2c4',
-  HOUSING: '#ef4444',
-  FOOD: '#f97316',
-  TRANSPORT: '#10b981',
-  HEALTH: '#ec4899',
-  OTHER: '#94a3b8',
-};
-
-const CAT_LABEL: Record<string, string> = {
-  MEDIA: '미디어',
-  COMMUNICATION: '통신',
-  EDUCATION: '교육',
-  INSURANCE: '보험',
-  HOUSING: '주거',
-  FOOD: '식비',
-  TRANSPORT: '교통',
-  HEALTH: '건강',
-  OTHER: '기타',
-};
 
 // 도넛 차트 SVG 컴포넌트
 function DonutChart({ segments }: {
@@ -205,9 +181,9 @@ export function Home() {
     return Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([cat, val]) => ({
-        label: CAT_LABEL[cat] ?? cat,
+        label: CATEGORY_LABEL[cat as Category] ?? cat,
         value: val,
-        color: CAT_COLORS[cat] ?? '#94a3b8',
+        color: CATEGORY_COLOR[cat as Category] ?? '#94a3b8',
         pct: Math.round((val / total) * 100),
       }));
   })();

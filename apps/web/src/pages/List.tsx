@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api.js';
 import { krw } from '../lib/format.js';
-import { CATEGORY_LABEL, type Category } from '@ffn/shared';
+import { CATEGORY_LABEL, CATEGORY_COLOR, type Category } from '@ffn/shared';
 import { Modal } from '../components/Modal.js';
 import { AccountForm, type AccountInitial } from '../features/AccountForm.js';
 import { CardForm, type CardInitial } from '../features/CardForm.js';
@@ -25,18 +25,6 @@ type EditState =
   | { kind: 'delete'; endpoint: string; label: string; version: number }
   | null;
 
-// 카테고리 컬러
-const CAT_COLORS: Record<string, string> = {
-  MEDIA: '#8b5cf6',
-  COMMUNICATION: '#3b82f6',
-  EDUCATION: '#f59e0b',
-  INSURANCE: '#00d2c4',
-  HOUSING: '#ef4444',
-  FOOD: '#f97316',
-  TRANSPORT: '#10b981',
-  HEALTH: '#ec4899',
-  OTHER: '#94a3b8',
-};
 
 export function List() {
   const [tab, setTab] = useState<Tab>('flows');
@@ -392,7 +380,7 @@ function FlowList({ flows, cards, accounts, onTap }: {
             ? `${src.issuer_name} ${src.product_name}`
             : `${src.institution_name} ${src.nickname}`;
 
-        const catColor = CAT_COLORS[f.category] ?? '#94a3b8';
+        const catColor = CATEGORY_COLOR[f.category] ?? '#94a3b8';
 
         return (
           <button
