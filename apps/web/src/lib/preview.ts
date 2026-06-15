@@ -32,22 +32,22 @@ const CARD_SHINHAN = { id: 'card-2', issuer_name: '신한카드', product_name: 
 const FLOWS = [
   { id: 'flow-1', merchant_name: '넷플릭스', category: 'MEDIA', amount_krw: 17_000,
     amount_is_variable: false, schedule_day: 5, source_card_id: 'card-1', source_account_id: null,
-    is_draft: false, version: 1 },
+    owner_user_id: USER_ID, is_draft: false, version: 1 },
   { id: 'flow-2', merchant_name: '아이폰 통신비', category: 'TELECOM', amount_krw: 89_000,
     amount_is_variable: false, schedule_day: 15, source_card_id: null, source_account_id: 'acc-1',
-    is_draft: false, version: 1 },
+    owner_user_id: 'preview-spouse', is_draft: false, version: 1 },
   { id: 'flow-3', merchant_name: '둘째 영어학원', category: 'EDUCATION', amount_krw: 320_000,
     amount_is_variable: false, schedule_day: 25, source_card_id: null, source_account_id: 'acc-1',
-    is_draft: false, version: 1 },
+    owner_user_id: null, is_draft: false, version: 1 },
   { id: 'flow-4', merchant_name: '실비보험', category: 'INSURANCE', amount_krw: 145_000,
     amount_is_variable: false, schedule_day: 20, source_card_id: null, source_account_id: 'acc-1',
-    is_draft: false, version: 1 },
+    owner_user_id: null, is_draft: false, version: 1 },
   { id: 'flow-5', merchant_name: '쿠팡 와우', category: 'MEDIA', amount_krw: 7_890,
     amount_is_variable: false, schedule_day: 10, source_card_id: 'card-1', source_account_id: null,
-    is_draft: false, version: 1 },
+    owner_user_id: USER_ID, is_draft: false, version: 1 },
   { id: 'flow-6', merchant_name: '주거 관리비', category: 'RENT', amount_krw: null,
     amount_is_variable: true, schedule_day: 28, source_card_id: null, source_account_id: 'acc-1',
-    is_draft: true, version: 1 },
+    owner_user_id: null, is_draft: true, version: 1 },
 ] as const;
 
 const GRAPH = {
