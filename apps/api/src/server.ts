@@ -1,7 +1,7 @@
 import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
-import { env } from './env.js';
+import { env, corsOrigins } from './env.js';
 import { authPlugin } from './plugins/auth.js';
 import { tenantPlugin } from './plugins/tenant.js';
 import { reasonPlugin } from './plugins/reason.js';
@@ -21,7 +21,7 @@ const app = Fastify({
 });
 
 await app.register(cors, {
-  origin: ['http://127.0.0.1:5173', 'http://localhost:5173'],
+  origin: corsOrigins,
   credentials: true,
 });
 await app.register(sensible);

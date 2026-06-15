@@ -41,6 +41,23 @@ flowchart TB
 
 ---
 
+## 0-1. 이 리포에 미리 준비된 것 ✅
+
+아래는 **코드/설정으로 이미 반영**되어 있어, 직접 수정할 필요가 없습니다.
+
+| 준비물 | 위치 | 역할 |
+|---|---|---|
+| Render Blueprint | `render.yaml` | 백엔드 배포 설정 한방 (시크릿만 대시보드 입력) |
+| Vercel 설정 | `apps/web/vercel.json` | Vite 프리셋 + **SPA rewrite**(라우트 새로고침 404 방지) |
+| 환경변수 템플릿 | `apps/web/.env.example`, `apps/api/.env.example` | 채워야 할 값 목록 |
+| keepalive cron | `.github/workflows/keepalive.yml` | Render 깨우기 (URL은 repo variable) |
+| PORT 자동 대응 | `apps/api/src/env.ts` | Render의 `PORT` 주입을 자동 인식 (코드 수정 불필요) |
+| CORS 환경변수화 | `apps/api/src/env.ts`, `server.ts` | `CORS_ORIGINS` env로 도메인 허용 (코드 수정 불필요) |
+
+**사용자가 할 일**: 계정 로그인 → Supabase 프로젝트 생성·마이그레이션 → Vercel/Render에서 이 리포 연결 → **환경변수(시크릿) 입력** → 배포. 코드는 건드릴 필요 없습니다.
+
+---
+
 ## 1. 사전 준비 — 필요한 계정 4개
 
 각각 GitHub 계정으로 가입하면 빠릅니다.
@@ -167,6 +184,8 @@ Project → Settings → Domains:
 
 ### 4-1. Web Service 생성
 
+> **빠른 길 (권장): Blueprint** — `render.yaml`이 리포에 있으므로 dashboard.render.com → "New" → **"Blueprint"** → 이 리포 선택하면 빌드/스타트/헬스체크/포트가 자동 설정됩니다. 이후 시크릿 환경변수(SUPABASE_*, CORS_ORIGINS, VAPID_*)만 입력하면 끝. 아래 수동 절차는 Blueprint를 안 쓸 때만.
+
 1. https://dashboard.render.com → "New" → "Web Service"
 2. GitHub 리포 선택 (cw-20022379/money-manager)
 3. 설정:
@@ -202,17 +221,12 @@ Project → Settings → Domains:
 
 빌드 끝나면 URL이 발급됨 (예: `https://family-finance-api.onrender.com`).
 
-### 4-2. server.ts의 host 바인딩 확인
+### 4-2. host/PORT 바인딩 — 이미 반영됨 ✅
 
-`apps/api/src/server.ts`가 Render에서 외부 노출되려면 `0.0.0.0`에 바인딩해야 합니다.
+- `API_HOST=0.0.0.0` 환경변수만 설정하면 외부 노출 (render.yaml에 기본 포함).
+- Render의 `PORT` 자동 주입은 `env.ts`가 이미 인식합니다 (`process.env.PORT ?? 3000`). **코드 수정 불필요.**
 
-현재 코드는 `env.API_HOST`를 읽으므로 위에서 `API_HOST=0.0.0.0`을 설정하면 OK.
-
-또한 Render는 환경변수 `PORT`를 자동 주입합니다. `env.ts`에서 `API_PORT`만 읽고 있어서 안전하지만, 더 견고하게 하려면 `apps/api/src/env.ts`를 한 번 수정:
-
-```ts
-API_PORT: z.coerce.number().default(Number(process.env.PORT ?? 3000)),
-```
+> render.yaml Blueprint로 배포하면 `API_HOST=0.0.0.0`이 자동 설정됩니다. 수동 Web Service로 만들면 환경변수에 직접 추가하세요.
 
 ### 4-3. healthz 확인
 
@@ -220,22 +234,15 @@ API_PORT: z.coerce.number().default(Number(process.env.PORT ?? 3000)),
 
 > ⚠ 첫 호출은 cold start로 30~60초 걸릴 수 있습니다.
 
-### 4-4. CORS 설정 — Vercel 도메인 허용
+### 4-4. CORS 설정 — 환경변수로 (코드 수정 불필요) ✅
 
-`apps/api/src/server.ts`의 CORS 설정에 Vercel 도메인 추가 필요:
+CORS는 `CORS_ORIGINS` 환경변수로 받습니다. Render 환경변수에 Vercel 도메인을 추가하세요:
 
-```ts
-await app.register(cors, {
-  origin: [
-    'http://127.0.0.1:5173',
-    'http://localhost:5173',
-    'https://family-finance.vercel.app',  // 본인 Vercel 도메인으로 교체
-  ],
-  credentials: true,
-});
+```
+CORS_ORIGINS=https://family-finance.vercel.app
 ```
 
-수정 후 commit + push → Render가 자동 재배포.
+여러 도메인은 쉼표로 구분 (`https://a.vercel.app,https://b.vercel.app`). 로컬 `5173`은 항상 허용됩니다. 값 변경 후 Render가 자동 재배포.
 
 ### 4-5. Vercel에 `VITE_API_URL` 마무리
 이제 Render URL이 생겼으니 Vercel Dashboard로 돌아가:
@@ -291,33 +298,14 @@ Render Free는 15분 idle 후 sleep → 다음 호출 cold start 30~60초.
 
 **해결**: KST 07~23시만 매 10분 간격으로 `/healthz` 핑.
 
-### 6-1. 워크플로우 파일 추가
+### 6-1. 워크플로우 파일 — 이미 있음 ✅
 
-```bash
-mkdir -p .github/workflows
-```
+`.github/workflows/keepalive.yml`이 리포에 준비돼 있습니다. URL은 코드에 박지 않고 **repo variable**로 받습니다:
 
-`.github/workflows/keepalive.yml` 생성:
+1. GitHub → 리포 → Settings → Secrets and variables → **Actions** → **Variables** 탭
+2. **New repository variable**: `RENDER_API_URL` = `https://<본인-api>.onrender.com`
 
-```yaml
-name: keepalive
-on:
-  schedule:
-    # UTC 기준 22~14시 = KST 07~23시
-    - cron: '*/10 22-23,0-14 * * *'
-  workflow_dispatch:  # 수동 트리거도 가능
-
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wake Render API
-        run: |
-          curl -fsS --max-time 90 https://family-finance-api.onrender.com/healthz \
-            || echo "Healthz failed (cold start ok, will retry next round)"
-```
-
-> URL은 본인 Render API 도메인으로 교체.
+설정하면 다음 cron부터 그 URL의 `/healthz`를 핑합니다. 변수 미설정이면 워크플로우는 조용히 건너뜁니다(에러 없음). Actions 탭에서 "keepalive" → "Run workflow"로 즉시 테스트 가능.
 
 ### 6-2. 한도 계산
 
@@ -332,14 +320,8 @@ jobs:
 **Render 가동 시간** (750h/월 한도):
 - 16h × 31일 = 496시간 → 한도의 66%, 안전
 
-### 6-3. Commit
-```bash
-git add .github/workflows/keepalive.yml
-git commit -m "ci: Render keepalive cron (KST 07~23시)"
-git push
-```
-
-GitHub Actions 탭에서 다음 cron 실행 확인.
+### 6-3. 확인
+워크플로우는 이미 main에 있습니다. §6-1의 `RENDER_API_URL` 변수만 설정하면 GitHub Actions 탭에서 다음 cron(또는 "Run workflow" 수동 실행)으로 동작 확인.
 
 ---
 

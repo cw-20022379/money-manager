@@ -16,8 +16,8 @@ export default defineConfig({
         name: '우리 가족 금융 내비게이터',
         short_name: '가족금융',
         description: '부부 공동 가족 금융관리',
-        theme_color: '#4fd1c5',
-        background_color: '#0f1419',
+        theme_color: '#00d2c4',
+        background_color: '#ffffff',
         display: 'standalone',
         icons: [
           { src: '/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
