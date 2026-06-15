@@ -16,8 +16,7 @@
  *   누가 주로 이 카드를 쓰는지(부담 책임자) 표시하는 라벨.
  *   null이면 부부 공동 카드. 접근 권한과 무관하게 가족 전원이 조회/수정 가능.
  *
- * extractLast4:
- *   accounts.ts와 동일한 패턴. 마이데이터 API와 카드를 매칭하기 위해 last4 보존.
+ * last4(마이데이터 매칭 대비)는 mask.ts의 extractLast4 공용 util 사용.
  *
  * CRUD 패턴은 accounts.ts와 동일:
  *   GET(soft delete 제외) / POST(LIFE_EVENT) / PATCH(낙관적 잠금) / DELETE(소프트 삭제)
@@ -26,6 +25,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../db.js';
 import { insertLifecycleEvent, type ReasonCode } from '../services/lifecycle.js';
+import { extractLast4 } from '../mask.js';
 
 const CreateBody = z.object({
   issuer_name: z.string().min(1).max(60),
@@ -44,13 +44,6 @@ const CreateBody = z.object({
 });
 
 const UpdateBody = CreateBody.partial();
-
-// 마이데이터 매칭 대비: 카드번호 마스킹 문자열에서 뒤 4자리 숫자 추출
-function extractLast4(masked?: string): string | null {
-  if (!masked) return null;
-  const digits = masked.replace(/\D/g, '');
-  return digits.length >= 4 ? digits.slice(-4) : null;
-}
 
 export const cardRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/cards', async (req) => {
