@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
@@ -6,15 +6,25 @@ import { subscribeLifecycle, subscribeFamilyData } from './lib/realtime.js';
 import { ToastProvider, useToast } from './components/Toast.js';
 import { Login } from './pages/Login.js';
 import { FamilySetup } from './pages/FamilySetup.js';
-import { Home } from './pages/Home.js';
-import { Flow } from './pages/Flow.js';
-import { List } from './pages/List.js';
-import { More } from './pages/More.js';
-import { History } from './pages/History.js';
-import { FamilyMembers } from './pages/FamilyMembers.js';
-import { ExpenseSplit } from './pages/ExpenseSplit.js';
 import { BottomNav } from './components/BottomNav.js';
 import { isPreviewMode, markPreviewMode } from './lib/preview.js';
+
+// 라우트 단위 코드스플릿 (인증 후 화면들은 지연 로드)
+const Home = lazy(() => import('./pages/Home.js').then((m) => ({ default: m.Home })));
+const Flow = lazy(() => import('./pages/Flow.js').then((m) => ({ default: m.Flow })));
+const List = lazy(() => import('./pages/List.js').then((m) => ({ default: m.List })));
+const More = lazy(() => import('./pages/More.js').then((m) => ({ default: m.More })));
+const History = lazy(() => import('./pages/History.js').then((m) => ({ default: m.History })));
+const FamilyMembers = lazy(() => import('./pages/FamilyMembers.js').then((m) => ({ default: m.FamilyMembers })));
+const ExpenseSplit = lazy(() => import('./pages/ExpenseSplit.js').then((m) => ({ default: m.ExpenseSplit })));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center text-dim">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-teal" />
+    </div>
+  );
+}
 
 type Stage = 'loading' | 'login' | 'setup' | 'app';
 
@@ -24,24 +34,26 @@ export function App() {
     return (
       <ToastProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/preview" element={<Navigate to="/home" replace />} />
-            <Route path="/preview/home" element={<Navigate to="/home" replace />} />
-            <Route path="/preview/flow" element={<Navigate to="/flow" replace />} />
-            <Route path="/preview/list" element={<Navigate to="/list" replace />} />
-            <Route path="/preview/more" element={<Navigate to="/more" replace />} />
-            <Route path="/preview/members" element={<Navigate to="/members" replace />} />
-            <Route path="/preview/split" element={<Navigate to="/split" replace />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/flow" element={<Flow />} />
-            <Route path="/list" element={<List />} />
-            <Route path="/more" element={<More />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/members" element={<FamilyMembers />} />
-            <Route path="/split" element={<ExpenseSplit />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/preview" element={<Navigate to="/home" replace />} />
+              <Route path="/preview/home" element={<Navigate to="/home" replace />} />
+              <Route path="/preview/flow" element={<Navigate to="/flow" replace />} />
+              <Route path="/preview/list" element={<Navigate to="/list" replace />} />
+              <Route path="/preview/more" element={<Navigate to="/more" replace />} />
+              <Route path="/preview/members" element={<Navigate to="/members" replace />} />
+              <Route path="/preview/split" element={<Navigate to="/split" replace />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/flow" element={<Flow />} />
+              <Route path="/list" element={<List />} />
+              <Route path="/more" element={<More />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/members" element={<FamilyMembers />} />
+              <Route path="/split" element={<ExpenseSplit />} />
+              <Route path="*" element={<Navigate to="/home" replace />} />
+            </Routes>
+          </Suspense>
           <BottomNav />
         </BrowserRouter>
       </ToastProvider>
@@ -133,17 +145,19 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/flow" element={<Flow />} />
-        <Route path="/list" element={<List />} />
-        <Route path="/more" element={<More />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/members" element={<FamilyMembers />} />
-        <Route path="/split" element={<ExpenseSplit />} />
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/flow" element={<Flow />} />
+          <Route path="/list" element={<List />} />
+          <Route path="/more" element={<More />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/members" element={<FamilyMembers />} />
+          <Route path="/split" element={<ExpenseSplit />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </Suspense>
       <BottomNav />
     </BrowserRouter>
   );

@@ -1,10 +1,26 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
 import { CATEGORY_LABEL, CATEGORY_COLOR } from '@ffn/shared';
-import { RelationshipGraph, type GraphData } from '../features/RelationshipGraph.js';
-import { CashflowCalendar, type CalFlow } from '../features/CashflowCalendar.js';
-import { BillingCycle } from '../features/BillingCycle.js';
+import { type GraphData } from '../features/RelationshipGraph.js';
+import { type CalFlow } from '../features/CashflowCalendar.js';
+
+// @xyflow/react가 무거워 관계도 뷰는 선택 시에만 로드 (초기 번들에서 분리)
+const RelationshipGraph = lazy(() =>
+  import('../features/RelationshipGraph.js').then((m) => ({ default: m.RelationshipGraph })));
+const CashflowCalendar = lazy(() =>
+  import('../features/CashflowCalendar.js').then((m) => ({ default: m.CashflowCalendar })));
+const BillingCycle = lazy(() =>
+  import('../features/BillingCycle.js').then((m) => ({ default: m.BillingCycle })));
+
+function ViewLoading({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 py-4 text-[13px] text-dim">
+      <div className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-teal" />
+      {label}
+    </div>
+  );
+}
 
 type FlowNode = GraphData['tree'][number]['cards'][number]['children'][number];
 type CardNode = GraphData['tree'][number]['cards'][number];
@@ -124,19 +140,26 @@ export function Flow() {
         </div>
       )}
 
-      {data && view === 'graph' && <RelationshipGraph data={data} />}
+      {data && view === 'graph' && (
+        <Suspense fallback={<ViewLoading label="관계도 불러오는 중..." />}>
+          <RelationshipGraph data={data} />
+        </Suspense>
+      )}
 
-      {data && view === 'billing' && <BillingCycle data={data} />}
+      {data && view === 'billing' && (
+        <Suspense fallback={<ViewLoading label="청구 불러오는 중..." />}>
+          <BillingCycle data={data} />
+        </Suspense>
+      )}
 
       {view === 'calendar' && (
         calFlows == null
-          ? (
-            <div className="flex items-center gap-2 py-4 text-dim text-[13px]">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-teal" />
-              캘린더 불러오는 중...
-            </div>
+          ? <ViewLoading label="캘린더 불러오는 중..." />
+          : (
+            <Suspense fallback={<ViewLoading label="캘린더 불러오는 중..." />}>
+              <CashflowCalendar flows={calFlows} />
+            </Suspense>
           )
-          : <CashflowCalendar flows={calFlows} />
       )}
 
       {data && view === 'tree' && (
