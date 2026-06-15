@@ -20,6 +20,8 @@ interface FlowNode {
 interface CardNode {
   id: string; product_name: string; issuer_name: string;
   monthly_sum: number;
+  payment_due_day?: number | null;
+  payment_due_month_offset?: number | null;
   children: FlowNode[];
 }
 interface AccountNode {

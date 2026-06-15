@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import { env } from './env.js';
@@ -40,7 +40,7 @@ await app.register(graphRoutes);
 await app.register(historyRoutes);
 await app.register(notificationRoutes);
 
-app.setErrorHandler((err, _req, reply) => {
+app.setErrorHandler((err: FastifyError, _req, reply) => {
   app.log.error({ err }, 'unhandled');
   if (err.validation) return reply.code(400).send({ error: 'VALIDATION', details: err.validation });
   return reply.code(500).send({ error: err.message ?? 'INTERNAL' });

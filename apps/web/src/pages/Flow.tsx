@@ -4,13 +4,14 @@ import { krw, krwShort } from '../lib/format.js';
 import { CATEGORY_LABEL } from '@ffn/shared';
 import { RelationshipGraph, type GraphData } from '../features/RelationshipGraph.js';
 import { CashflowCalendar, type CalFlow } from '../features/CashflowCalendar.js';
+import { BillingCycle } from '../features/BillingCycle.js';
 
 type FlowNode = GraphData['tree'][number]['cards'][number]['children'][number];
 type CardNode = GraphData['tree'][number]['cards'][number];
 type AccountNode = GraphData['tree'][number];
 
-type View = 'tree' | 'graph' | 'calendar';
-const ALLOWED: readonly View[] = ['tree', 'graph', 'calendar'];
+type View = 'tree' | 'graph' | 'calendar' | 'billing';
+const ALLOWED: readonly View[] = ['tree', 'graph', 'calendar', 'billing'];
 
 // 카테고리 컬러
 const CAT_COLORS: Record<string, string> = {
@@ -120,6 +121,13 @@ export function Flow() {
           </svg>
           캘린더
         </Seg>
+        <Seg active={view === 'billing'} onClick={() => changeView('billing')}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="inline mr-1">
+            <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+            <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8"/>
+          </svg>
+          청구
+        </Seg>
       </div>
 
       {!data && (
@@ -130,6 +138,8 @@ export function Flow() {
       )}
 
       {data && view === 'graph' && <RelationshipGraph data={data} />}
+
+      {data && view === 'billing' && <BillingCycle data={data} />}
 
       {view === 'calendar' && (
         calFlows == null
