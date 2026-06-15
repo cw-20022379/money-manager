@@ -1,3 +1,16 @@
+/**
+ * features/AccountForm.tsx — 계좌 등록·수정 폼
+ *
+ * 신규 등록: POST /api/accounts
+ * 수정: detectChanges() → 변경 필드만 PATCH + ReasonModal로 사유 선택.
+ *
+ * 사유 추천(recommend):
+ *   잔액·계좌 종류 변경 → LIFE_EVENT (가족 알림 필요한 중요 변경)
+ *   그 외(별명·계좌번호 수정) → CORRECTION
+ *
+ * InstitutionSelect: 은행 프리셋 목록 + 직접 입력 폴백.
+ * normalizeAccountNumber: 대시·공백 제거, 숫자+별표만 유지.
+ */
 import { useState } from 'react';
 import { api } from '../lib/api.js';
 import { BANK_PRESETS, normalizeAccountNumber } from '../lib/presets.js';

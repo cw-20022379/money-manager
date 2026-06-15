@@ -30,6 +30,10 @@ export interface LearnableFlow {
   schedule_day: number;
 }
 
+/**
+ * 입력값을 소문자로 변환하고 공백·구분자를 제거해 비교용 키를 만든다.
+ * '쿠팡 와우'와 '쿠팡와우'가 같은 키가 되므로 사용자 입력 불일치를 흡수한다.
+ */
 function norm(s: string): string {
   return s.toLowerCase().replace(/[\s·+]/g, '');
 }
@@ -43,7 +47,11 @@ function presetToSuggestion(p: MerchantPreset): Suggestion {
   return { source: 'preset', name: p.name, icon: p.icon, category: p.category, amount: p.amount, day: p.day };
 }
 
-/** 가족 기존 머천트 → 중복 제거(이름 기준, 첫 등장 유지) + 입력 매칭. */
+/**
+ * 가족이 이미 등록한 항목에서 자동완성 후보를 만든다.
+ * 같은 머천트가 여러 번 등록돼 있어도 첫 번째만 노출 (seen Set으로 중복 제거).
+ * hint: "이전에 매월 N원"을 표시해 금액 입력 가이드를 제공.
+ */
 function familySuggestions(flows: LearnableFlow[], input: string): Suggestion[] {
   const q = norm(input);
   const seen = new Set<string>();
@@ -67,12 +75,17 @@ function familySuggestions(flows: LearnableFlow[], input: string): Suggestion[] 
 }
 
 /**
- * 입력값으로 자동완성 후보를 만든다. 가족 항목을 위로, 그 다음 프리셋.
- * 가족이 이미 쓰는 이름은 프리셋에서 제외(중복 방지).
+ * 자동완성 후보 목록 생성. 가족 항목 우선, 그 다음 공통 프리셋.
+ * 가족이 이미 쓰는 머천트명은 프리셋에서 제거해 중복 표시를 방지한다.
+ *
+ * 우선순위 설계 이유:
+ *   - 가족이 등록한 항목은 실제 쓰는 정보(금액·결제일 포함)라서 더 정확하다.
+ *   - 프리셋은 공통 추천이므로 가족 항목이 없을 때 보조 역할.
  */
 export function buildSuggestions(input: string, familyFlows: LearnableFlow[], limit = 8): Suggestion[] {
   if (!norm(input)) return [];
   const fam = familySuggestions(familyFlows, input);
+  // 가족 항목과 이름이 겹치는 프리셋을 제거한다.
   const famNames = new Set(fam.map((s) => norm(s.name)));
   const pre = matchPresets(input)
     .map(presetToSuggestion)

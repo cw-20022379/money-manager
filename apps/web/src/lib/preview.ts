@@ -1,20 +1,40 @@
 /**
- * Preview 모드 — supabase/백엔드 없이 정적 mock으로 4화면 + 공통 컴포넌트를 그린다.
- * 디자인 컨셉 비교/스크린샷 캡쳐 용도. /preview/* 경로로 진입하면
- * sessionStorage에 플래그가 박혀 이후 라우트 이동에도 mock이 유지된다.
+ * lib/preview.ts — Preview 모드 (mock 백엔드)
+ *
+ * Supabase·실제 API 없이 박씨네 가족 시나리오로 앱 전체를 렌더링한다.
+ * 용도:
+ *   - 디자인 컨셉 비교용 스크린샷 (Playwright 등)
+ *   - E2E 스모크 테스트 (백엔드 없이 CI에서 구동)
+ *   - PR 미리보기 (worktree + /preview/* 경로)
+ *
+ * 진입 방법:
+ *   /preview 또는 /preview/home 등 prefix 경로로 접근 → App.tsx가 markPreviewMode()로
+ *   sessionStorage에 'ffn:preview'='1' 을 기록 → 이후 /list, /flow 등 일반 경로 이동에도
+ *   isPreviewMode()가 true를 반환해 mock이 계속 유지된다.
+ *
+ * 새로고침 시 초기화:
+ *   sessionStorage는 탭 닫기/새로고침에 살아있으나, 브라우저 탭 종료 시 사라진다.
+ *   의도적으로 세션 단위만 유지한다.
  */
 
+/**
+ * 현재 세션이 Preview 모드인지 확인한다.
+ * SSR 환경(window 없음)에서는 항상 false를 반환해 안전하게 동작한다.
+ */
 export function isPreviewMode(): boolean {
   if (typeof window === 'undefined') return false;
   if (window.location.pathname.startsWith('/preview')) return true;
   return sessionStorage.getItem('ffn:preview') === '1';
 }
 
+/** sessionStorage에 플래그를 박아 이후 일반 경로 이동에도 mock이 유지되게 한다. */
 export function markPreviewMode(): void {
   if (typeof window !== 'undefined') sessionStorage.setItem('ffn:preview', '1');
 }
 
 // ─── mock fixtures ────────────────────────────────────────────────────────────
+// 박씨네 가족 시나리오: OWNER(재현) + MEMBER(지민) 부부, 계좌 2개, 카드 2장, 정기지출 6건.
+// flow-6(주거 관리비)은 is_draft=true로 DraftResumeBanner 테스트용.
 const FAMILY_ID = 'preview-family';
 const USER_ID = 'preview-user';
 const HUSBAND = '재현';
@@ -107,6 +127,11 @@ const ME = {
 const NOTIFICATION_RULE = { has_subscription: false, life_event: true, correction: false };
 
 // ─── router ───────────────────────────────────────────────────────────────────
+/**
+ * path를 보고 해당하는 mock 데이터를 반환하는 라우터.
+ * api()가 isPreviewMode()일 때 이 함수를 호출한다.
+ * 새로운 엔드포인트를 추가할 때는 여기에 케이스를 추가하면 된다.
+ */
 export async function previewApi<T>(path: string): Promise<T> {
   // 짧은 지연으로 실제 네트워크 흉내 (스크린샷 시 로딩 깜빡임 최소화)
   await new Promise((r) => setTimeout(r, 20));

@@ -1,3 +1,18 @@
+/**
+ * features/DeleteConfirm.tsx — 해지 확인 모달
+ *
+ * 정기지출·계좌·카드의 소프트 삭제(해지)를 확인하는 공용 모달.
+ * 소프트 삭제: DB에서 실제로 지우지 않고 deleted_at 타임스탬프를 기록.
+ *   → 변경 기록(History)에서 "해지 직전" 상태를 볼 수 있다.
+ *   → 실수 해지 시 백엔드에서 복구 가능.
+ *
+ * reasonCode는 항상 LIFE_EVENT로 고정한다.
+ *   해지는 중요한 가족 변경이므로 배우자에게 항상 알림이 간다.
+ *   CORRECTION으로 조용히 삭제하는 경우는 상정하지 않는다.
+ *
+ * version: 낙관적 잠금. 수정 모달에서 해지 모달로 전환할 때 원본 버전을 전달받는다.
+ *   List.tsx의 EditState: 'delete' 에서 version을 관리한다.
+ */
 import { useState } from 'react';
 import { Modal } from '../components/Modal.js';
 import { api } from '../lib/api.js';

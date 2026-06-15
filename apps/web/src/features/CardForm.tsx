@@ -1,3 +1,20 @@
+/**
+ * features/CardForm.tsx — 카드 등록·수정 폼
+ *
+ * 신규 등록: POST /api/cards
+ * 수정: detectChanges() → 변경 필드만 PATCH + ReasonModal로 사유 선택.
+ *
+ * 핵심 필드:
+ *   billing_account_id: 이 카드의 결제대금을 인출할 계좌. BillingCycle 뷰에서 사용.
+ *   payment_due_day: 통장에서 빠지는 날 (카드 긁는 날 schedule_day와 다름).
+ *     이 두 날짜의 차이가 BillingCycle 화면의 핵심 정보.
+ *
+ * 사유 추천(recommend):
+ *   결제계좌·결제일·카드사 변경 → LIFE_EVENT (가족 지출 구조에 영향)
+ *   그 외(상품명·카드번호 수정) → CORRECTION
+ *
+ * formatCardNumber: 숫자와 별표만 추출 후 4자리마다 대시 자동 삽입.
+ */
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { CARD_ISSUER_PRESETS, formatCardNumber } from '../lib/presets.js';

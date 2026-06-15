@@ -1,3 +1,21 @@
+/**
+ * pages/FamilyMembers.tsx — 가족 구성원 관리
+ *
+ * 권한 모델:
+ *   OWNER: 최초 가족을 만든 사람. 남을 내보낼 수 있으나 본인은 나갈 수 없다.
+ *   MEMBER: 초대 토큰으로 합류한 사람. 본인만 나갈 수 있다.
+ *   → 소유자는 OWNER_CANNOT_LEAVE 에러를 서버에서 반환.
+ *   → 소유자를 내보내려 하면 CANNOT_REMOVE_OWNER 에러.
+ *
+ * 나가기/내보내기 UX:
+ *   confirm 상태에 대상 멤버를 저장 → Modal에서 확인 후 removeMember 호출.
+ *   본인이 나가면 location.href='/'로 전체 재시작 (세션 재검사 필요).
+ *
+ * avatarColor: user_id를 해시해 AVATAR_BG 팔레트에서 색 결정.
+ *   같은 사람은 항상 같은 색 → ExpenseSplit 색상과 통일.
+ *
+ * lastSeenLabel: 마지막 접속 시간을 "N분/시간/일 전" 형식으로 표시.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { Modal } from '../components/Modal.js';
@@ -111,7 +129,9 @@ export function FamilyMembers() {
                 </div>
                 <div className="mt-0.5 text-xs text-dim">{lastSeenLabel(m.last_seen_at)}</div>
               </div>
-              {/* 액션: 본인(소유자 아님) 나가기 / 소유자가 남 내보내기 */}
+                      {/* 액션 버튼 표시 조건:
+                  - 본인이고 OWNER가 아닌 경우 → 나가기 (OWNER는 나갈 수 없음)
+                  - 내가 OWNER이고 상대가 MEMBER인 경우 → 내보내기 */}
               {((m.is_me && m.role !== 'OWNER') || (!m.is_me && iAmOwner && m.role !== 'OWNER')) && (
                 <button onClick={() => setConfirm(m)}
                   className="shrink-0 rounded-md border border-line px-2.5 py-1 text-xs text-dim hover:border-bad hover:text-bad">

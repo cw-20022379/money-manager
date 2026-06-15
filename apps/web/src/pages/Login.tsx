@@ -1,3 +1,13 @@
+/**
+ * pages/Login.tsx — 로그인 / 회원가입
+ *
+ * Supabase 이메일/비밀번호 인증을 사용한다.
+ * mode='in': signInWithPassword, mode='up': signUp.
+ *
+ * 개발 환경에서 이메일 확인은 Supabase Inbucket(http://127.0.0.1:54324)에서 한다.
+ * 로그인 성공 시 Supabase가 세션을 생성하고 App.tsx의 onAuthStateChange가
+ * check()를 재실행해 stage를 'setup' 또는 'app'으로 전환한다.
+ */
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
@@ -13,6 +23,8 @@ export function Login() {
     setBusy(true);
     setMsg('');
     try {
+      // fn.call(supabase.auth, ...): 메서드를 변수로 분리하면 this 바인딩이 깨지므로
+      // .call()로 명시적으로 this를 supabase.auth로 지정한다.
       const fn = mode === 'in' ? supabase.auth.signInWithPassword : supabase.auth.signUp;
       const { error } = await fn.call(supabase.auth, { email, password });
       if (error) setMsg(error.message);
