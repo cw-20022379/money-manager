@@ -1,3 +1,22 @@
+/**
+ * pages/Flow.tsx — 자금 흐름도 (4가지 뷰)
+ *
+ * 뷰 종류:
+ *   tree: 계좌 → 카드 → 정기지출 계층 구조. 가장 가볍고 기본 뷰.
+ *   graph: react-flow 기반 인터랙티브 관계도. @xyflow/react가 무거우므로 지연 로드.
+ *   calendar: 월 캘린더 그리드. /api/flows 추가 호출 필요. 선택 시에만 로드.
+ *   billing: 카드별 결제일 기준 청구 묶음. 선택 시에만 로드.
+ *
+ * 뷰 퍼시스턴스:
+ *   ffn:flow-view sessionStorage 키로 선택한 뷰를 기억.
+ *   페이지 이동 후 돌아와도 같은 뷰 유지.
+ *   ALLOWED 화이트리스트로 잘못된 값(직접 수정, 구버전 잔류 등) 방어.
+ *
+ * 데이터 로드:
+ *   - /api/graph: tree·graph·billing 뷰의 공통 데이터. 항상 로드.
+ *   - /api/flows: calendar 뷰 전용. calendar로 전환 시에만 fetch.
+ *   - ffn:data-changed 이벤트 수신 시 양쪽 모두 재로드.
+ */
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
@@ -22,11 +41,14 @@ function ViewLoading({ label }: { label: string }) {
   );
 }
 
+// GraphData 구조에서 개별 노드 타입을 추출. RelationshipGraph와 동일 타입을 재사용.
 type FlowNode = GraphData['tree'][number]['cards'][number]['children'][number];
 type CardNode = GraphData['tree'][number]['cards'][number];
 type AccountNode = GraphData['tree'][number];
 
 type View = 'tree' | 'graph' | 'calendar' | 'billing';
+// sessionStorage에서 읽은 값을 신뢰하지 않고 화이트리스트로 검증한다.
+// 이전 버전에서 저장된 값, 브라우저 개발자 도구로 수정한 값 등을 방어.
 const ALLOWED: readonly View[] = ['tree', 'graph', 'calendar', 'billing'];
 
 // 미니 인라인 바 (카드/계좌 지출 비율 표시)
@@ -45,12 +67,14 @@ function InlineBar({ value, max, color = '#00d2c4' }: { value: number; max: numb
 export function Flow() {
   const [data, setData] = useState<GraphData | null>(null);
   const [calFlows, setCalFlows] = useState<CalFlow[] | null>(null);
+  // 초기 뷰: sessionStorage에서 복원. 없거나 유효하지 않으면 'tree'(기본).
   const [view, setView] = useState<View>(() => {
     const stored = sessionStorage.getItem('ffn:flow-view') as View | null;
     return stored && ALLOWED.includes(stored) ? stored : 'tree';
   });
 
   useEffect(() => {
+    // /api/graph는 tree·graph·billing이 공통으로 사용하므로 항상 로드한다.
     const load = () => api<GraphData>('/api/graph').then(setData).catch(console.error);
     load();
     window.addEventListener('ffn:data-changed', load);
@@ -58,6 +82,8 @@ export function Flow() {
   }, []);
 
   useEffect(() => {
+    // calendar 뷰는 /api/flows 별도 호출이 필요하다 (모든 날짜별 스케줄 정보 필요).
+    // 다른 뷰에서는 불필요하므로 calendar로 전환 시에만 fetch.
     if (view !== 'calendar') return;
     const load = () =>
       api<{ items: CalFlow[] }>('/api/flows?status=ACTIVE')
@@ -70,10 +96,11 @@ export function Flow() {
 
   function changeView(v: View) {
     setView(v);
+    // 뷰 선택을 sessionStorage에 저장해 페이지 이동 후 돌아와도 같은 뷰를 유지한다.
     sessionStorage.setItem('ffn:flow-view', v);
   }
 
-  // 총 월 지출 (max 기준용)
+  // InlineBar 최댓값 계산용: 전체 월 지출 합계 기준으로 각 계좌의 비율을 표시한다.
   const totalMonthly = data?.tree.reduce((s, a) => s + a.monthly_sum, 0) ?? 0;
 
   return (
@@ -302,6 +329,8 @@ function AccountTree({ node, totalMonthly }: { node: AccountNode; totalMonthly: 
   );
 }
 
+// 카드 노드는 기본으로 접힌 상태(open=false). 계좌와 달리 세부 항목이 많을 수 있어
+// 한 번에 펼치면 스크롤이 길어지므로 클릭 시에만 자식(정기지출)을 보여준다.
 function CardTree({ node }: { node: CardNode }) {
   const [open, setOpen] = useState(false);
   return (

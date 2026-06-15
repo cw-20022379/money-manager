@@ -6,6 +6,25 @@ import { useNavigate } from 'react-router-dom';
 import type { Category } from '@ffn/shared';
 
 /**
+ * features/RelationshipGraph.tsx — 자금 관계도 (인터랙티브 그래프)
+ *
+ * @xyflow/react(react-flow)를 사용해 계좌→카드→정기지출 트리를 인터랙티브 그래프로 표시한다.
+ * 번들 크기가 크므로 Flow.tsx에서 lazy import로 뷰 선택 시에만 로드한다.
+ *
+ * 레이아웃 전략 (buildGraph):
+ *   3열 구조: 계좌(x=0) → 카드(x=320) → 정기지출(x=640)
+ *   각 열은 수직으로 배치 (ROW_H=100px 간격).
+ *   커서(cursorY) 방식: 계좌 아래에 카드와 직접 정기지출을 배치하며,
+ *   카드 아래에 자식 정기지출을 추가로 배치. cursorY를 계속 내려가며 겹침 방지.
+ *   orphan_cards(결제계좌 없는 카드): 모든 계좌 트리 아래 별도로 표시.
+ *
+ * 노드 클릭 → onNodeClick:
+ *   entityKind에 따라 ffn:edit-account / ffn:edit-card / ffn:edit-flow 를 sessionStorage에 저장.
+ *   /list로 navigate → List가 해당 항목의 편집 모달을 자동으로 열어준다.
+ *   (sessionStorage 라우팅 브릿지 패턴)
+ *
+ * MiniMap: 노드가 8개 초과일 때만 표시. 소수의 가족에게는 불필요하므로 숨김.
+ *
  * /api/graph 응답 — Flow.tsx에서 사용 중인 것과 동일 구조.
  * 트리 구조를 react-flow의 nodes/edges로 변환해 표시한다.
  */
@@ -36,9 +55,10 @@ export interface GraphData {
   summary: { fixed_sum: number; active_count: number; draft_count: number };
 }
 
+// 그래프 레이아웃 상수. 열 X좌표와 행 높이를 변경하면 전체 레이아웃이 바뀐다.
 const COL_X = { account: 0, card: 320, flow: 640 } as const;
-const ROW_H = 100;
-const NODE_W = 240;
+const ROW_H = 100;   // 노드 간 수직 간격 (px)
+const NODE_W = 240;  // 노드 고정 너비 (px)
 
 interface NodeData extends Record<string, unknown> {
   label: string;
@@ -171,7 +191,8 @@ function buildGraph(data: GraphData): { nodes: Node<NodeData>[]; edges: Edge[] }
       cardCursor = Math.max(cardCursor + ROW_H, flowCursor);
     }
 
-    // 카드 없이 계좌→정기지출 직접 연결 (자동이체)
+    // 자동이체 정기지출: 카드를 거치지 않고 계좌에서 직접 출금.
+    // 카드 트리 아래에 이어서 배치하되 겹치지 않게 Math.max로 커서 위치 결정.
     let directCursor = Math.max(cursorY, cardCursor);
     for (const flow of acc.direct_flows) {
       nodes.push({

@@ -1,3 +1,27 @@
+/**
+ * features/FlowForm.tsx — 정기지출 등록·수정 폼
+ *
+ * 주요 기능:
+ *   자동완성: 신규 등록 시 머천트명 입력 → buildSuggestions()로 가족 기록 + 프리셋 후보.
+ *             선택 시 분류·금액·결제일 자동 채움.
+ *   중복 가드: 신규 등록 시 /api/flows/similar?... 를 350ms 디바운스로 조회.
+ *             유사 항목이 있으면 경고 배너 표시.
+ *   변경 감지(detectChanges): 편집 시 초기값과 비교해 변경된 필드만 PATCH 페이로드 생성.
+ *             변경 없으면 서버 호출 없이 onDone.
+ *   사유 추천(recommend): 변경 내용에 따라 LIFE_EVENT 또는 CORRECTION을 추천.
+ *             기준: 금액 5만원 이상 변동·결제수단 변경·결제일 변경 → LIFE_EVENT.
+ *             그 외 → CORRECTION.
+ *   초안 저장(saveAsDraft): 변경사항을 is_draft=true로 PATCH. 사유는 CORRECTION.
+ *             ReasonModal의 "나중에 - 초안으로" 버튼에 연결.
+ *
+ * 신규 vs 편집 분기:
+ *   isEdit = !!initial. 편집 시 자동완성·중복 가드 비활성화.
+ *   신규: POST /api/flows
+ *   편집: submit → detectChanges → ReasonModal → PATCH /api/flows/:id
+ *
+ * flow_kind: 결제수단 전환 시 함께 변경.
+ *   카드 → CARD_RECURRING, 계좌 → BANK_AUTO_TRANSFER.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 import { CATEGORY_LABEL, type Category } from '@ffn/shared';
@@ -36,7 +60,9 @@ const CATS: Category[] = [
   'EDUCATION','LOAN','CARD_BILL','RENT','HEALTHCARE','OTHER',
 ];
 
-const DEFAULT_THRESHOLD = 50_000;  // 5만원 이상 변동 → LIFE_EVENT 추천 (P7)
+// 금액 변동 임계값: 이 값 이상 변동되면 가족 알림(LIFE_EVENT)을 추천한다.
+// 통신비 소폭 변동(2만→2.1만) 같은 사소한 변화는 CORRECTION으로 처리하기 위한 기준.
+const DEFAULT_THRESHOLD = 50_000;  // 5만원 이상 변동 → LIFE_EVENT 추천
 
 export function FlowForm({ initial, onDone, onDelete }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -100,7 +126,10 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     setShowSug(false);
   }
 
-  // 비슷한 항목 가드 (P3) - 신규 등록 시만
+  // 중복 가드: 신규 등록 시에만 동일 머천트+결제일+결제수단 조합을 검색한다.
+  // 350ms 디바운스: 입력 중 과도한 API 호출 방지.
+  // similar > 0이면 "비슷한 항목이 이미 N건 있어요" 경고 배너를 표시해
+  // 사용자가 기존 항목을 수정하도록 유도한다 (중복 등록 방지).
   useEffect(() => {
     if (isEdit || !merchant || !day) { setSimilar([]); return; }
     const p = new URLSearchParams({ merchant: merchant.trim(), schedule_day: day });
@@ -149,7 +178,10 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     setErr('');
     if (isEdit) {
       const patch = detectChanges();
+      // 변경 없으면 서버 호출 없이 완료. 사용자가 실수로 열었다가 닫는 경우 처리.
       if (Object.keys(patch).length === 0) { onDone(); return; }
+      // 변경이 있으면 pendingPatch에 저장하고 ReasonModal을 띄운다.
+      // 사유 선택 후 confirmPatch()에서 실제 PATCH 호출.
       setPendingPatch(patch);
       return;
     }
@@ -219,7 +251,11 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     }
   }
 
-  // 추천: 금액 변동 ≥ 5만원, 연결 카드/계좌 변경 → LIFE_EVENT, 그 외 → CORRECTION
+  // 사유 자동 추천 로직:
+  //   결제수단(카드↔계좌) 변경, 결제일 변경 → 가족이 알아야 할 큰 변화 → LIFE_EVENT
+  //   금액 5만원 이상 변동 → 가족에 영향 있는 변화 → LIFE_EVENT
+  //   그 외 (메모 수정, 분류 변경 등) → 기록만 남기면 충분 → CORRECTION
+  // 추천이므로 사용자가 ReasonModal에서 변경 가능하다.
   const recommend: 'LIFE_EVENT' | 'CORRECTION' = (() => {
     if (!initial) return 'LIFE_EVENT';
     const patch = detectChanges();
@@ -252,6 +288,8 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
                 {suggestions.map((s) => (
                   <li key={`${s.source}:${s.name}`}>
                     <button type="button"
+                      // onMouseDown + e.preventDefault(): onBlur(hideDropdown)보다 먼저 실행되어
+                      // 클릭 시 드롭다운이 사라지기 전에 선택이 처리된다.
                       onMouseDown={(e) => { e.preventDefault(); applySuggestion(s); }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-panel2">
                       <span className="text-base">{s.icon}</span>

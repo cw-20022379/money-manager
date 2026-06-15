@@ -1,3 +1,18 @@
+/**
+ * features/ReasonModal.tsx — 변경 사유 선택 모달
+ *
+ * 정기지출·계좌·카드를 수정할 때 이 모달이 중간에 끼어 사유를 묻는다.
+ * 사유는 API의 x-reason-code 헤더로 전달되고 lifecycle_events에 기록된다.
+ *
+ * LIFE_EVENT: 실제로 바뀐 내용. 배우자에게 푸시 알림 발송.
+ * CORRECTION: 단순 오타/수정. 알림 없음.
+ *
+ * recommend prop: FlowForm·AccountForm·CardForm이 변경 내용을 분석해 추천값을 전달한다.
+ *   추천 표시("⭐ 추천")로 사용자가 쉽게 선택하도록 유도하지만 변경 가능.
+ *
+ * onLater (optional): P7 "나중에 - 초안으로" 버튼. FlowForm에서만 사용.
+ *   현재 변경사항을 is_draft=true로 저장하고 나중에 검토할 수 있게 한다.
+ */
 import { useState } from 'react';
 import { Modal } from '../components/Modal.js';
 

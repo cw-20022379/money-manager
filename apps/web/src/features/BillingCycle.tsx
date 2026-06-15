@@ -1,3 +1,18 @@
+/**
+ * features/BillingCycle.tsx — 카드 청구 사이클 뷰
+ *
+ * 핵심 개념: 카드를 긁는 날(schedule_day)과 통장에서 빠지는 날(payment_due_day)은 다르다.
+ *   - schedule_day: 정기지출이 발생하는 날 (카드 승인 또는 자동이체 출금일).
+ *   - payment_due_day: 카드사가 이달 사용분을 결제계좌에서 인출하는 날.
+ *
+ * 이 화면은 payment_due_day 기준으로 카드별로 묶어 "통장서 한 번에 빠질 금액"을 보여준다.
+ * 예: 5일에 넷플릭스(카드 긁음), 10일에 쿠팡(카드 긁음) → 25일에 카드사가 합산 인출.
+ *
+ * 잔액 부족 경고: account.balance_krw < card.monthly_sum이면 빨간 경고 배너 표시.
+ *
+ * 노드 클릭 → openCard(): sessionStorage에 카드 id → /list 이동 → List가 카드 편집 모달 오픈.
+ * (sessionStorage 라우팅 브릿지 패턴)
+ */
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_LABEL } from '@ffn/shared';
@@ -11,7 +26,11 @@ interface Props {
   data: GraphData;
 }
 
-/** 오늘 기준 매월 N일까지 남은 일수 (지났으면 다음 달로). */
+/**
+ * 오늘 기준 매월 N일 결제일까지 남은 일수를 계산한다.
+ * 오늘이 결제일 이후면 다음 달 결제일을 기준으로 계산한다.
+ * D-0이면 "오늘 결제"로 표시된다.
+ */
 function daysUntil(day: number, today: Date): number {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const month = today.getDate() > day ? today.getMonth() + 1 : today.getMonth();

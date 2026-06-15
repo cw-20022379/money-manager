@@ -1,3 +1,28 @@
+/**
+ * features/CashflowCalendar.tsx — 현금흐름 캘린더 뷰
+ *
+ * 월 그리드(7열) 형태로 정기지출 결제일을 시각화한다.
+ *
+ * resolveDay(scheduleDay, year, month):
+ *   31일짜리 정기지출이 2월(28/29일)처럼 짧은 달에 오면 마지막 날로 클램프한다.
+ *   예: schedule_day=31인 항목 → 2월에는 28/29일로 표시.
+ *
+ * 셀 색상(cellTone):
+ *   해당 날 합산 금액에 따라 색을 달리한다.
+ *   0원: 회색 / 1원~4.9만원: 그린 / 5만원~9.9만원: 앰버 / 10만원 이상: 레드.
+ *   시각적으로 큰 지출일을 강조해 결제일 전 확인을 유도한다.
+ *
+ * 날짜 클릭 → selectedDay:
+ *   해당 날의 정기지출 목록을 하단 패널에 표시.
+ *   항목 클릭 → sessionStorage ffn:edit-flow + /list 이동 (라우팅 브릿지 패턴).
+ *
+ * remaining:
+ *   현재 월에서만 계산. 오늘 이후 남은 결제액 합산. 이번달 얼마나 남았는지 표시.
+ *
+ * 셀 배열 생성:
+ *   월 1일의 요일(firstWeekday)만큼 패딩 셀을 앞에 넣어 그리드를 맞춘다.
+ *   마지막 주가 7의 배수가 되도록 뒤에도 패딩 추가.
+ */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_LABEL, type Category } from '@ffn/shared';
@@ -25,6 +50,10 @@ function lastDayOfMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
+/**
+ * 정기지출의 schedule_day를 실제 해당 월의 유효한 날짜로 변환한다.
+ * 31일인 정기지출이 30일짜리 달(4,6,9,11월)이나 2월에 올 때 마지막 날로 클램프.
+ */
 function resolveDay(scheduleDay: number, year: number, month: number): number {
   const last = lastDayOfMonth(year, month);
   return Math.min(scheduleDay, last);

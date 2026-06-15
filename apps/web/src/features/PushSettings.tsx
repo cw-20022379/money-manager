@@ -1,3 +1,15 @@
+/**
+ * features/PushSettings.tsx — 푸시 알림 설정 UI
+ *
+ * 현재 구독 상태(PushStatus)에 따라 다른 UI를 표시한다.
+ *   subscribed: "끄기" 버튼만 표시.
+ *   default/granted: "켜기" 버튼 표시 → enablePush() 호출.
+ *   denied: 안내 텍스트만 표시 (브라우저 설정에서만 변경 가능).
+ *   unsupported: 안내 텍스트만 표시.
+ *
+ * More.tsx의 "알림" 섹션 안에 렌더링된다.
+ * lib/push.ts의 enablePush / disablePush / getPushStatus 를 직접 호출한다.
+ */
 import { useEffect, useState } from 'react';
 import { disablePush, enablePush, getPushStatus, type PushStatus } from '../lib/push.js';
 import { useToast } from '../components/Toast.js';

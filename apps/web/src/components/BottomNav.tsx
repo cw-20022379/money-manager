@@ -1,3 +1,13 @@
+/**
+ * components/BottomNav.tsx — 하단 내비게이션 바
+ *
+ * 설계 의도:
+ *   - 모바일 PWA의 기본 탐색 수단. 최대 700px 폭으로 데스크탑도 지원.
+ *   - active 상태: 아이콘 fill 색상 + 탭 상단 인디케이터 라인 + 텍스트 색상 변경.
+ *   - paddingBottom: env(safe-area-inset-bottom) — iPhone 홈 바 영역 침범 방지 (PWA 필수).
+ *   - NavLink의 isActive 콜백으로 현재 경로를 추적. History·Members·Split은
+ *     탭에 직접 노출되지 않으므로 해당 경로에서는 아무 탭도 active 아님.
+ */
 import { NavLink } from 'react-router-dom';
 
 const tabs = [

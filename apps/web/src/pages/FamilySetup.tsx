@@ -1,3 +1,17 @@
+/**
+ * pages/FamilySetup.tsx — 가족 초기 설정
+ *
+ * 인증은 됐지만 아직 가족(family)이 없는 사용자에게 표시된다.
+ * App.tsx의 stage='setup' 단계에서 렌더링된다.
+ *
+ * 두 가지 경로:
+ *   CreateForm: 새 가족 생성 (POST /api/families). 본인이 OWNER가 된다.
+ *   JoinForm: 초대 토큰으로 기존 가족 합류 (POST /api/families/join).
+ *
+ * 완료(onDone) 후 location.reload()로 앱을 재시작한다.
+ * 서버에서 membership을 반환하는 타이밍 보장이 어려워 reload가 가장 안전하다.
+ * (App.tsx의 FamilySetup onDone 주석 참조)
+ */
 import { useState } from 'react';
 import { api } from '../lib/api.js';
 

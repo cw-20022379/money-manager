@@ -1,3 +1,19 @@
+/**
+ * pages/ExpenseSplit.tsx — 지출 분담 계산
+ *
+ * 부부 분담 모델:
+ *   - owner_user_id = 특정 멤버: 그 사람이 전액 부담.
+ *   - owner_user_id = null: 공동 → 가족 구성원 수로 균등 분배.
+ *   - is_draft 또는 amount_krw = null 항목은 집계에서 제외 (확정되지 않은 금액).
+ *
+ * 계산 방식 (useMemo):
+ *   각 멤버의 totals 객체를 초기화 후 flows를 순회하며 부담액을 더한다.
+ *   공동 항목은 members.length로 나눠 각 멤버에게 분배.
+ *   grand: 전체 합계 (비율 바 기준값).
+ *
+ * 색상 배정: user_id를 해시해 PALETTE 배열에서 색을 결정.
+ *   같은 사람은 항상 같은 색 → 목록의 오너 배지와 통일.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw } from '../lib/format.js';
@@ -44,9 +60,11 @@ export function ExpenseSplit() {
       const amt = f.amount_krw ?? 0;
       grand += amt;
       if (f.owner_user_id && memberIds.has(f.owner_user_id)) {
+        // 특정 멤버 부담: owner_user_id가 현재 멤버 목록에 있는 경우만 집계.
+        // 탈퇴한 멤버의 owner_user_id는 memberIds에 없으므로 자동으로 공동 처리.
         totals[f.owner_user_id]! += amt;
       } else {
-        // 공동 — 멤버 균등 분배
+        // 공동(owner_user_id=null) 또는 탈퇴 멤버 → 현재 구성원 수로 균등 분배
         const share = members.length ? amt / members.length : 0;
         members.forEach((m) => { totals[m.user_id]! += share; });
       }
