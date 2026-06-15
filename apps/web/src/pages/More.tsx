@@ -166,8 +166,7 @@ export function More() {
           ),
           label: '가족 구성원',
           sub: '멤버 관리 및 초대',
-          badge: 'v0.2',
-          disabled: true,
+          href: '/members',
         }} />
       </div>
 

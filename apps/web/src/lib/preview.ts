@@ -123,6 +123,19 @@ export async function previewApi<T>(path: string): Promise<T> {
   if (path === '/api/history') return { items: [] } as T;
   if (path === '/api/notifications/rules') return NOTIFICATION_RULE as T;
   if (path === '/api/notifications/vapid-key') return { publicKey: '' } as T;
+  if (path === '/api/families/members') {
+    const now = Date.now();
+    return {
+      my_role: 'OWNER',
+      members: [
+        { user_id: USER_ID, display_name: HUSBAND, role: 'OWNER', is_me: true,
+          joined_at: '2026-01-02T00:00:00Z', last_seen_at: new Date(now - 2 * 60_000).toISOString() },
+        { user_id: 'preview-spouse', display_name: '지민', role: 'MEMBER', is_me: false,
+          joined_at: '2026-01-05T00:00:00Z', last_seen_at: new Date(now - 26 * 3_600_000).toISOString() },
+      ],
+    } as T;
+  }
+  if (path === '/api/families/invite') return { token: 'preview-INVITE-TOKEN-7d', expires_in_days: 7 } as T;
 
   // 알 수 없는 경로 — 빈 객체 반환 (모달 등 동작 안 깨지게)
   return {} as T;

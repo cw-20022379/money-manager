@@ -11,6 +11,7 @@ import { Flow } from './pages/Flow.js';
 import { List } from './pages/List.js';
 import { More } from './pages/More.js';
 import { History } from './pages/History.js';
+import { FamilyMembers } from './pages/FamilyMembers.js';
 import { BottomNav } from './components/BottomNav.js';
 import { isPreviewMode, markPreviewMode } from './lib/preview.js';
 
@@ -29,11 +30,13 @@ export function App() {
             <Route path="/preview/flow" element={<Navigate to="/flow" replace />} />
             <Route path="/preview/list" element={<Navigate to="/list" replace />} />
             <Route path="/preview/more" element={<Navigate to="/more" replace />} />
+            <Route path="/preview/members" element={<Navigate to="/members" replace />} />
             <Route path="/home" element={<Home />} />
             <Route path="/flow" element={<Flow />} />
             <Route path="/list" element={<List />} />
             <Route path="/more" element={<More />} />
             <Route path="/history" element={<History />} />
+            <Route path="/members" element={<FamilyMembers />} />
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
           <BottomNav />
@@ -134,6 +137,7 @@ function AppInner() {
         <Route path="/list" element={<List />} />
         <Route path="/more" element={<More />} />
         <Route path="/history" element={<History />} />
+        <Route path="/members" element={<FamilyMembers />} />
         <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
       <BottomNav />

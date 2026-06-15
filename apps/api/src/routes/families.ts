@@ -75,6 +75,68 @@ export const familyRoutes: FastifyPluginAsync = async (fastify) => {
     return { token, expires_in_days: 7 };
   });
 
+  // 가족 구성원 목록 (v0.2)
+  fastify.get('/api/families/members', async (req, reply) => {
+    if (!req.user) return reply.code(401).send();
+    const { data: my } = await supabaseAdmin
+      .from('memberships')
+      .select('family_id, role')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (!my) return reply.code(403).send({ error: 'NO_FAMILY' });
+
+    const { data: members, error } = await supabaseAdmin
+      .from('memberships')
+      .select('user_id, display_name, role, joined_at, last_seen_at')
+      .eq('family_id', my.family_id)
+      .order('joined_at', { ascending: true });
+    if (error) return reply.code(500).send({ error: error.message });
+
+    return {
+      my_role: my.role,
+      members: (members ?? []).map((m) => ({ ...m, is_me: m.user_id === req.user!.id })),
+    };
+  });
+
+  // 구성원 내보내기(OWNER) / 가족에서 나가기(본인)
+  fastify.delete('/api/families/members/:userId', async (req, reply) => {
+    if (!req.user) return reply.code(401).send();
+    const { userId } = req.params as { userId: string };
+
+    const { data: my } = await supabaseAdmin
+      .from('memberships')
+      .select('family_id, role')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (!my) return reply.code(403).send({ error: 'NO_FAMILY' });
+
+    const { data: target } = await supabaseAdmin
+      .from('memberships')
+      .select('user_id, role')
+      .eq('user_id', userId)
+      .eq('family_id', my.family_id)
+      .maybeSingle();
+    if (!target) return reply.code(404).send({ error: 'NOT_FOUND' });
+
+    const isSelf = userId === req.user.id;
+    if (isSelf) {
+      // 소유자 본인은 나갈 수 없음 (가족이 주인 없이 남는 것 방지)
+      if (my.role === 'OWNER') return reply.code(400).send({ error: 'OWNER_CANNOT_LEAVE' });
+    } else {
+      // 남을 내보내려면 소유자여야 하고, 다른 소유자는 못 내보냄
+      if (my.role !== 'OWNER') return reply.code(403).send({ error: 'NOT_OWNER' });
+      if (target.role === 'OWNER') return reply.code(400).send({ error: 'CANNOT_REMOVE_OWNER' });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('memberships')
+      .delete()
+      .eq('user_id', userId)
+      .eq('family_id', my.family_id);
+    if (error) return reply.code(500).send({ error: error.message });
+    return { ok: true };
+  });
+
   // 초대 토큰으로 합류
   fastify.post('/api/families/join', async (req, reply) => {
     if (!req.user) return reply.code(401).send();
