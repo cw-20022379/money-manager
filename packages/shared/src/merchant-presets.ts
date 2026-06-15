@@ -6,6 +6,7 @@ import type { Category } from './types.js';
  *
  * - `aliases`: 검색 매칭용 별칭(영문/약칭/오타 방지). 표시는 항상 `name`.
  * - `amount`: 대표 요금(원). 플랜이 여러 개면 가장 흔한 값. null이면 변동.
+ *             null인 경우 amount_is_variable=true로 자동 설정되어 변동 지출로 등록된다.
  * - `day`: 흔한 결제일(없으면 생략, 사용자 입력 유도).
  */
 export interface MerchantPreset {
@@ -13,6 +14,10 @@ export interface MerchantPreset {
   icon: string;
   category: Category;
   aliases: string[];
+  /**
+   * 대표 월정액(원). null = 변동 지출 (공과금·보험·대출 등 금액이 매달 달라지는 항목).
+   * null이면 FlowForm에서 amount_is_variable 체크박스가 자동으로 활성화된다.
+   */
   amount: number | null;
   day?: number;
 }
@@ -50,7 +55,7 @@ export const MERCHANT_PRESETS: MerchantPreset[] = [
   { name: '알뜰폰 요금', icon: '📱', category: 'TELECOM', amount: 22_000, aliases: ['알뜰', 'mvno'] },
   { name: '인터넷+TV', icon: '🌐', category: 'TELECOM', amount: 33_000, aliases: ['인터넷', 'iptv', '와이파이'] },
 
-  // ── 공과금 ────────────────────────────────────────────────────
+  // ── 공과금 (amount=null: 매달 청구 금액이 다름) ──────────────
   { name: '관리비', icon: '🏢', category: 'UTILITY', amount: null, aliases: ['아파트관리비', '주거관리비'] },
   { name: '전기요금', icon: '💡', category: 'UTILITY', amount: null, aliases: ['한전', '한국전력'] },
   { name: '도시가스', icon: '🔥', category: 'UTILITY', amount: null, aliases: ['가스요금', '가스비'] },
@@ -64,6 +69,7 @@ export const MERCHANT_PRESETS: MerchantPreset[] = [
 
   // ── 보험 ──────────────────────────────────────────────────────
   { name: '실비보험', icon: '🏥', category: 'INSURANCE', amount: 35_000, aliases: ['실손보험', '실손의료'] },
+  // 자동차보험은 연납이라 월 금액이 달라 amount=null
   { name: '자동차보험', icon: '🚗', category: 'INSURANCE', amount: null, aliases: ['자보', '차보험'] },
   { name: '종신보험', icon: '🛡️', category: 'INSURANCE', amount: 100_000, aliases: ['생명보험'] },
   { name: '암보험', icon: '🎗️', category: 'INSURANCE', amount: 50_000, aliases: ['건강보험상품'] },
@@ -81,23 +87,34 @@ export const MERCHANT_PRESETS: MerchantPreset[] = [
   { name: '필라테스', icon: '🤸', category: 'HEALTHCARE', amount: 180_000, aliases: ['pilates'] },
   { name: '요가', icon: '🧘', category: 'HEALTHCARE', amount: 120_000, aliases: ['yoga'] },
 
-  // ── 주거 / 대출 ──────────────────────────────────────────────
+  // ── 주거 / 대출 (amount=null: 대출 잔액·금리 따라 매달 달라짐) ─
   { name: '월세', icon: '🏠', category: 'RENT', amount: null, aliases: ['집세', '임대료'] },
   { name: '전세대출 이자', icon: '🏦', category: 'LOAN', amount: null, aliases: ['전세이자', '전세대출'] },
   { name: '주택담보대출', icon: '🏘️', category: 'LOAN', amount: null, aliases: ['주담대', '모기지'] },
   { name: '신용대출 상환', icon: '💳', category: 'LOAN', amount: null, aliases: ['신용대출', '마이너스통장'] },
 ];
 
-/** 검색용 정규화: 소문자 + 공백/특수문자 제거. */
+/**
+ * 검색용 정규화: 소문자 변환 + 공백·중점(·)·플러스(+) 제거.
+ * 사용자가 "넷 플릭스"처럼 띄어 써도, "LG U+"처럼 특수문자가 있어도 매칭된다.
+ */
 function norm(s: string): string {
   return s.toLowerCase().replace(/[\s·+]/g, '');
 }
 
 /**
  * 입력 문자열로 프리셋을 매칭한다.
- * - 이름/별칭에 입력이 포함(부분일치)되면 후보.
- * - prefix(앞에서 시작) 일치를 부분일치보다 위로 정렬.
- * 빈 입력이면 빈 배열(프리셋 폭탄 방지).
+ *
+ * 점수 체계 (score):
+ *   - 2점(prefix)  : 이름 또는 별칭이 입력으로 시작(앞에서 일치). 더 구체적인 의도로 간주해 상단 노출.
+ *   - 1점(부분일치): 이름 또는 별칭 중간에 입력이 포함됨.
+ *   - -1(제외)     : 이름·별칭 어디에도 없음.
+ *
+ * 같은 점수 내에서는 한국어 사전순(localeCompare)으로 정렬해 예측 가능한 순서를 유지한다.
+ * 빈 입력이면 빈 배열 반환 — 모든 프리셋을 한꺼번에 노출하면 UX가 혼잡해지므로.
+ *
+ * @param input 사용자가 입력한 검색어
+ * @param limit 반환할 최대 후보 수 (기본 6)
  */
 export function matchPresets(input: string, limit = 6): MerchantPreset[] {
   const q = norm(input);
@@ -109,8 +126,8 @@ export function matchPresets(input: string, limit = 6): MerchantPreset[] {
     let best = -1;
     for (const k of keys) {
       const idx = k.indexOf(q);
-      if (idx === 0) best = Math.max(best, 2);       // prefix
-      else if (idx > 0) best = Math.max(best, 1);    // 부분일치
+      if (idx === 0) best = Math.max(best, 2);       // prefix 일치 (2점)
+      else if (idx > 0) best = Math.max(best, 1);    // 부분 일치 (1점)
     }
     if (best >= 0) scored.push({ p, score: best });
   }

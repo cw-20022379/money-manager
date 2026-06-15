@@ -1,4 +1,25 @@
-"""시나리오 A: 등록 → 편집(Reason) → 실시간 토스트 → 변경기록 Diff → 되돌리기 → 초안 → DraftResumeModal."""
+"""시나리오 A: 등록 → 편집(Reason) → 실시간 토스트 → 변경기록 Diff → 되돌리기 → 초안 → DraftResumeModal.
+
+이 테스트가 검증하는 것:
+  "부부 공동 가계부"의 핵심 협업 워크플로우 전체를 한 시나리오로 관통한다.
+
+  1. 등록  : 남편이 계좌·카드·정기지출(넷플릭스)을 등록한다.
+  2. 동기화: 아내 화면에 넷플릭스 항목이 실시간으로 표시되는지 확인 (Supabase Realtime).
+  3. 편집  : 아내가 금액을 17,000 → 50,000으로 변경 + ReasonModal에서 LIFE_EVENT 선택.
+             (변경 diff가 33,000원이라 앱 추천은 CORRECTION이지만 LIFE_EVENT를 강제 선택해
+              notify_spouse=true → 남편에게 알림이 가는 시나리오를 테스트)
+  4. 토스트: 남편 화면에 Realtime 토스트가 12초 이내에 나타나는지 polling 검증.
+  5. Diff  : 아내 화면 변경 기록에서 17,000→50,000 금액 diff가 표시되는지 확인.
+  6. 되돌리기: 아내가 "되돌리기" → REVERTED 이벤트 append → 남편 목록에 17,000 복원 확인.
+              (중요: 원본 UPDATED 이벤트 삭제 없이 REVERTED 이벤트 append — append-only 철학)
+  7. 초안  : 남편이 초안(is_draft=true) 정기지출 저장 → 홈 화면 DraftResumeModal 등장 확인.
+  8. 이어쓰기: "이어서 작성" 클릭 → /list + 편집 모달 자동 오픈 확인.
+
+전제:
+  - 로컬 Supabase와 apps/api, apps/web dev 서버가 실행 중이어야 한다.
+  - husband@test.local / wife@test.local 계정이 동일 가족으로 세팅되어 있어야 한다.
+  - 시작 전 cleanup()으로 "박씨네" 테스트 데이터를 초기화한다.
+"""
 import subprocess
 import time
 from pathlib import Path
@@ -23,6 +44,7 @@ def main():
     cleanup()
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
+        # 부부 2 컨텍스트: 각각 독립 쿠키·localStorage 세션, 별도 Realtime WebSocket 연결
         ctx_h = new_ctx(browser, "H")
         ctx_w = new_ctx(browser, "W")
         page_h = ctx_h.new_page()
@@ -82,6 +104,7 @@ def main():
         shot(page_h, "A-04-flow-created")
 
         # 5) 아내: 데이터 동기화 대기 + 목록 진입 → 정기지출 확인
+        # Supabase Realtime이 payment_flows INSERT 이벤트를 아내 컨텍스트에 전달하는 시간 대기
         time.sleep(1.2)
         goto_tab(page_w, "목록")
         page_w.wait_for_selector('text=넷플릭스', timeout=8000)
@@ -105,6 +128,9 @@ def main():
         log("W", "ReasonModal LIFE_EVENT로 저장 (17,000 → 50,000)")
 
         # 7) 남편 화면에 Realtime 토스트 등장 확인 (toast container를 polling)
+        # lifecycle_events에 notify_spouse=true인 UPDATED 이벤트가 INSERT되면
+        # Supabase Realtime이 lifecycle_events 채널을 구독 중인 남편 브라우저에 이벤트를 보내고,
+        # 프론트엔드가 [data-testid="toast"]를 렌더링한다.
         end = time.time() + 12
         toast_seen = False
         while time.time() < end:
@@ -134,6 +160,8 @@ def main():
         shot(page_w, "A-09-history-diff")
 
         # 9) 아내: "↩️ 되돌리기" 클릭
+        # 원본 UPDATED 이벤트는 삭제되지 않고 REVERTED 이벤트가 새로 append된다.
+        # lifecycle_events는 append-only이므로 되돌리기도 "원본을 지우지 않고 보정 이벤트 추가" 방식.
         page_w.click('button:has-text("되돌리기")')
         page_w.wait_for_selector('text=되돌림 완료', timeout=8000)
         log("W", "되돌리기 완료 토스트 OK")
@@ -151,6 +179,7 @@ def main():
         shot(page_h, "A-11-husband-reverted")
 
         # 11) 남편: 초안 정기지출 등록 (학원비 - 변동/초안)
+        # is_draft=true이면 집계·알림에서 제외되지만 홈 화면에 DraftResumeModal이 뜬다.
         page_h.click('button:has-text("+ 새로 등록")')
         page_h.wait_for_selector('text=💸 정기지출 등록', timeout=5000)
         page_h.fill('input[required]', "둘째 영어학원")
@@ -164,6 +193,7 @@ def main():
         shot(page_h, "A-12-draft-created")
 
         # 12) 남편: /home 이동 → DraftResumeModal 등장
+        # 초안이 있는 상태에서 홈에 진입하면 "작성 중이던 항목이 있어요" 모달이 자동으로 뜬다.
         goto_tab(page_h, "홈")
         time.sleep(1.0)
         try:
