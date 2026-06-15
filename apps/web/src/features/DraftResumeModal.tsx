@@ -1,3 +1,19 @@
+/**
+ * features/DraftResumeModal.tsx — 초안 이어서 작성 배너 (P6)
+ *
+ * 홈 화면 최상단에 마운트된다. 마운트 시 /api/flows?is_draft=true 를 조회해
+ * 초안이 1건 이상이면 "이어서 작성?" 모달을 자동으로 표시한다.
+ *
+ * 사용자 흐름:
+ *   "이어서 작성" 클릭 → sessionStorage에 ffn:edit-flow=<id> → /list 이동
+ *   → List가 마운트 후 해당 초안의 FlowForm 편집 모달 자동 오픈.
+ *   "나중에" 클릭 → dismissed=true → 홈 화면 세션 내 다시 표시 안 함.
+ *
+ * 여러 초안이 있으면 가장 첫 번째만 표시하고 "외 N건의 초안" 메시지를 추가한다.
+ *
+ * Preview 모드에서는 /api/flows?is_draft=true 가 빈 배열을 반환하도록 설계돼 있어
+ * 모달이 자동으로 뜨지 않는다. (preview.ts 참조)
+ */
 import { useEffect, useState } from 'react';
 import { Modal } from '../components/Modal.js';
 import { api } from '../lib/api.js';

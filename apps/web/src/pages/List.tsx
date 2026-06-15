@@ -1,3 +1,21 @@
+/**
+ * pages/List.tsx — 정기지출·계좌·카드 관리 목록
+ *
+ * 핵심 역할:
+ *   1) CRUD 허브: 정기지출/계좌/카드를 조회·등록·수정·해지하는 모달 상태머신.
+ *   2) sessionStorage 라우팅 브릿지: 다른 화면(관계도·캘린더·청구·홈 초안)에서
+ *      ffn:edit-flow / ffn:edit-account / ffn:edit-card 에 id를 넣고 /list로 navigate하면
+ *      List가 마운트 후 해당 항목의 편집 모달을 자동으로 연다.
+ *      키는 매칭 직후 삭제해 새로고침 시 재오픈되지 않도록 한다.
+ *   3) ffn:data-changed 이벤트 수신: 배우자가 Realtime으로 변경하면 자동 재조회.
+ *
+ * EditState 상태머신:
+ *   null → 모달 없음
+ *   { kind: 'new', type } → 신규 등록 모달
+ *   { kind: 'edit-flow'|'edit-account'|'edit-card', ... } → 수정 모달
+ *   { kind: 'delete', ... } → 해지 확인 모달
+ *   수정 모달에서 "해지" 버튼 → kind: 'delete' 로 전환 (모달 전환, 원본 데이터 유지).
+ */
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api.js';
 import { krw } from '../lib/format.js';
@@ -17,6 +35,10 @@ interface Card extends CardInitial {
   payment_due_day: number | null;
 }
 
+/**
+ * 모달 열림 상태를 하나의 discriminated union으로 관리.
+ * 여러 boolean 플래그를 쓰는 것보다 상태 전환이 명확하고 버그가 적다.
+ */
 type EditState =
   | { kind: 'new'; type: Tab }
   | { kind: 'edit-flow'; flow: Flow }
@@ -53,6 +75,11 @@ export function List() {
     return () => window.removeEventListener('ffn:data-changed', handler);
   }, [refresh]);
 
+  // sessionStorage 라우팅 브릿지.
+  // RelationshipGraph·BillingCycle·CashflowCalendar·DraftResumeModal 등이
+  // ffn:edit-flow / ffn:edit-account / ffn:edit-card 에 id를 넣고 /list로 navigate한다.
+  // flows/accounts/cards 데이터가 로드된 후(deps에 포함)에만 실행해 항목을 찾을 수 있게 한다.
+  // 우선순위: flow → account → card (순서대로 확인, 첫 번째 매칭에서 중단).
   useEffect(() => {
     const flowId = sessionStorage.getItem('ffn:edit-flow');
     if (flowId && flows.length > 0) {
@@ -60,6 +87,7 @@ export function List() {
       if (t) {
         setTab('flows');
         setEdit({ kind: 'edit-flow', flow: t });
+        // 즉시 삭제: 새로고침 또는 /list 재진입 시 모달이 다시 열리지 않게 한다.
         sessionStorage.removeItem('ffn:edit-flow');
         return;
       }
@@ -343,12 +371,14 @@ function FlowList({ flows, cards, accounts, onTap }: {
   if (flows.length === 0)
     return <Empty>정기지출이 비어있어요. + 버튼으로 첫 항목을 등록하세요.</Empty>;
 
+  // 정렬: 초안(is_draft=true)을 먼저 노출해 미완성 항목을 빠르게 처리하도록 유도.
+  // 같은 그룹 내에서는 금액 큰 순으로 정렬 (상위 지출부터 파악).
   const sorted = [...flows].sort((a, b) => {
     if (a.is_draft !== b.is_draft) return a.is_draft ? -1 : 1;
     return (b.amount_krw ?? 0) - (a.amount_krw ?? 0);
   });
 
-  // 총합 (변동 제외)
+  // 총합: 초안과 변동 금액(null)은 집계에서 제외. 확정된 고정지출만 합산.
   const total = sorted.filter(f => !f.is_draft && f.amount_krw).reduce((s, f) => s + (f.amount_krw ?? 0), 0);
 
   return (
@@ -370,10 +400,12 @@ function FlowList({ flows, cards, accounts, onTap }: {
       )}
 
       {sorted.map((f) => {
+        // 결제 출처: 카드 또는 계좌 중 하나. source_card_id 우선 확인.
         const src = f.source_card_id
           ? cards.find((c) => c.id === f.source_card_id)
           : accounts.find((a) => a.id === f.source_account_id);
         const isCard = f.source_card_id != null;
+        // 카드와 계좌가 다른 구조 → 'product_name' in src 로 타입 구분.
         const srcLabel = !src
           ? '— 연결 없음 —'
           : 'product_name' in src

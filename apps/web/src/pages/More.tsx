@@ -1,3 +1,18 @@
+/**
+ * pages/More.tsx — 설정·더보기 화면
+ *
+ * 메뉴 항목을 MenuItem 인터페이스로 추상화해 MenuRow 컴포넌트가 균일하게 렌더링.
+ * Link(라우팅), button(onClick), div(disabled) 세 가지 형태를 하나의 컴포넌트로 처리.
+ *
+ * 섹션 구성:
+ *   데이터: 변경 기록 (/history), 데이터 내보내기 (v0.3 예정, 현재 비활성)
+ *   알림: PushSettings 컴포넌트 (Web Push 켜기/끄기)
+ *   가족: 구성원 관리 (/members), 지출 분담 (/split)
+ *   로그아웃: supabase.auth.signOut() → App.tsx onAuthStateChange → login 단계로 전환
+ *
+ * badge: "v0.3" 같은 버전 배지로 미구현 기능임을 사용자에게 안내한다.
+ * danger: 위험 액션(로그아웃)은 빨간 색상으로 구별한다.
+ */
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { PushSettings } from '../features/PushSettings.js';

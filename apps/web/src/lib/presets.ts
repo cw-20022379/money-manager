@@ -1,3 +1,16 @@
+/**
+ * lib/presets.ts — 은행·카드사 프리셋 목록 + 입력 정규화 유틸
+ *
+ * BANK_PRESETS / CARD_ISSUER_PRESETS: InstitutionSelect 셀렉트박스의 선택지.
+ *   한국 주요 금융기관 목록. 프리셋에 없는 기관은 CUSTOM_OPTION("직접 입력")으로 처리.
+ *   v0.2에서 packages/presets로 분리 권고.
+ *
+ * normalizeAccountNumber: 계좌번호 정규화. 대시·공백 제거, 숫자와 별표(*)만 유지.
+ *   사용자가 "110-3456-7890"처럼 대시를 포함해 입력해도 정규화 후 저장.
+ *
+ * formatCardNumber: 카드번호 4자리마다 대시 자동 삽입.
+ *   마스킹 문자(*)도 허용해 "5325xxxx1234" → "5325-xxxx-1234" 형태.
+ */
 // 한국 주요 은행·카드사 프리셋. 직접 입력 폴백 포함.
 // v0.2에서 packages/presets로 분리 권고.
 

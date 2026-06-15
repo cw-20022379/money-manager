@@ -1,3 +1,22 @@
+/**
+ * pages/Home.tsx — 대시보드 (홈)
+ *
+ * 보여주는 정보:
+ *   - 이번달 고정지출 합계 + 활성 건수 + 초안 건수
+ *   - D-Day 알림 (다가오는 결제 — 서버의 /api/graph.summary.upcoming)
+ *   - 카테고리 분포 도넛 차트 (순수 SVG, 라이브러리 없음)
+ *   - 계좌별 월 지출 미니 바 차트 (순수 SVG)
+ *   - 배우자 초대 토큰 생성
+ *   - DraftResumeBanner: 초안이 있으면 맨 위에 "이어서 작성?" 모달 자동 표시
+ *
+ * 도넛 차트 구현:
+ *   /api/graph의 tree 데이터에서 카테고리별 금액을 집계한다.
+ *   서버 summary에 카테고리별 분류가 없으므로 tree를 직접 탐색해 계산.
+ *   순수 SVG arc 패스 수동 계산 (각도 → 좌표 변환). 라이브러리 없음.
+ *   세그먼트 사이에 gap(2도)을 두어 구분감을 부여한다.
+ *
+ * 전월 대비·예산 달성률은 현재 mock 하드코딩. v0.2에서 실제 데이터로 교체 예정.
+ */
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
@@ -22,7 +41,13 @@ interface GraphSummary {
   }>;
 }
 
-// 도넛 차트 SVG 컴포넌트
+/**
+ * 카테고리별 지출 분포를 시각화하는 도넛 차트.
+ * SVG arc 패스를 직접 계산한다.
+ * - 12시 방향(-90°)부터 시작해 시계 방향으로 그린다.
+ * - 각 세그먼트 사이에 2° 간격(gap)을 줘서 구분감을 부여한다.
+ * - largeArc: 세그먼트가 180°를 넘으면 1, 아니면 0 (SVG arc 스펙).
+ */
 function DonutChart({ segments }: {
   segments: Array<{ label: string; value: number; color: string; pct: number }>;
 }) {
@@ -32,7 +57,7 @@ function DonutChart({ segments }: {
   const circumference = 2 * Math.PI * r;
   const gap = 2; // degrees gap between segments
 
-  let currentAngle = -90; // start from top
+  let currentAngle = -90; // start from top (12시 방향)
 
   return (
     <svg width="112" height="112" viewBox="0 0 112 112">
@@ -154,12 +179,14 @@ export function Home() {
   const empty = !g || (g.tree.length === 0 && g.summary.active_count === 0);
   const totalFixed = g?.summary.fixed_sum ?? 0;
 
-  // 카테고리 집계 (preview mock flows 기반 — api에서 category가 오면 실제 데이터 사용)
-  // preview.ts의 GRAPH.tree에서 flows를 뽑아 category별로 집계
-  // 실제 데이터에서는 summary에 category가 없으므로 tree에서 집계
+  // 카테고리별 지출 집계.
+  // /api/graph의 summary에는 카테고리 분류가 없으므로 tree를 직접 탐색한다.
+  // tree → 계좌 → direct_flows(자동이체) + cards → children(카드지출)을 모두 순회.
+  // 초안(is_draft)과 변동금액(amount_krw=null)은 집계에서 제외한다.
+  // (g as any): GraphSummary 타입에 tree 내부 구조가 정확히 정의되지 않아 캐스팅.
+  //  v0.2에서 GraphData 타입을 공유 패키지로 통합하면 제거 예정.
   const catData = (() => {
     if (!g) return [];
-    // tree에서 direct_flows + card.children을 탐색
     const map = new Map<string, number>();
     for (const acc of (g as any).tree ?? []) {
       for (const flow of acc.direct_flows ?? []) {
@@ -177,9 +204,10 @@ export function Home() {
         }
       }
     }
+    // 합계가 0이면 0으로 나누기 방지를 위해 1로 설정.
     const total = Array.from(map.values()).reduce((a, b) => a + b, 0) || 1;
     return Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1] - a[1])  // 금액 큰 카테고리 먼저
       .map(([cat, val]) => ({
         label: CATEGORY_LABEL[cat as Category] ?? cat,
         value: val,

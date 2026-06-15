@@ -1,3 +1,21 @@
+/**
+ * pages/History.tsx — 변경 기록 (감사 로그)
+ *
+ * lifecycle_events 테이블의 레코드를 날짜별로 그룹해 표시한다.
+ *
+ * Diff 컴포넌트:
+ *   UPDATED 이벤트: before/after 모두 있음 → 변경된 필드만 비교해 표시.
+ *   CREATED: after만 있음 → 등록 내용 표시.
+ *   TERMINATED: before만 있음 → 해지 직전 상태 표시.
+ *   메타 필드(id, family_id, version, 타임스탬프)는 diff에서 제외.
+ *
+ * 되돌리기(Revert):
+ *   UPDATED 이벤트에만 가능. 7일 이내만 허용 (서버 정책).
+ *   에러 코드에 따라 사용자 친화적 메시지 표시 (TOO_OLD, ONLY_UPDATE_REVERTABLE).
+ *
+ * members 상태: v0.1.1에서는 본인 정보만. v0.2에서 /api/families/members로 전체 목록 조회 예정.
+ *   nameOf(uid): uid가 members에 없으면 '가족 멤버' 폴백 표시.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useToast } from '../components/Toast.js';
@@ -70,7 +88,8 @@ export function History() {
     }
   }
 
-  // 날짜별 그룹핑
+  // occurred_at ISO 문자열에서 앞 10자(YYYY-MM-DD)를 그룹 키로 사용.
+  // 날짜별로 묶어 '── 2026-06-15 ──' 형태의 섹션 헤더를 만든다.
   const grouped = events.reduce<Record<string, Event[]>>((acc, ev) => {
     const day = ev.occurred_at.slice(0, 10);
     (acc[day] ??= []).push(ev);
@@ -127,6 +146,10 @@ export function History() {
   );
 }
 
+/**
+ * before/after 스냅샷을 비교해 변경된 필드만 표시한다.
+ * CREATED(after만)/TERMINATED(before만)/UPDATED(둘 다) 3가지 경우를 처리한다.
+ */
 function Diff({ before, after }: { before: Record<string, unknown> | null; after: Record<string, unknown> | null }) {
   if (!before || !after) {
     // CREATED는 after만, TERMINATED는 before만
@@ -134,7 +157,7 @@ function Diff({ before, after }: { before: Record<string, unknown> | null; after
     if (before) return <Pretty obj={before} label="해지 직전" />;
     return null;
   }
-  // 변경된 필드만
+  // 변경된 필드만 추출. 메타 필드는 제외 (사용자에게 의미 없는 내부 필드).
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   const diffs: Array<[string, unknown, unknown]> = [];
   for (const k of keys) {
