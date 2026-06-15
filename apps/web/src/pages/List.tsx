@@ -26,6 +26,7 @@ import { CardForm, type CardInitial } from '../features/CardForm.js';
 import { FlowForm, type FlowInitial } from '../features/FlowForm.js';
 import { DeleteConfirm } from '../features/DeleteConfirm.js';
 import { useToast } from '../components/Toast.js';
+import { SegmentTab as Seg } from '../components/SegmentTab.js';
 
 type Tab = 'flows' | 'accounts' | 'cards';
 
@@ -340,17 +341,6 @@ export function List() {
         />
       )}
     </div>
-  );
-}
-
-function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`seg-item ${active ? 'seg-item-active' : 'seg-item-inactive'}`}
-    >
-      {children}
-    </button>
   );
 }
 

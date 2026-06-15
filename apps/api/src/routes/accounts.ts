@@ -22,14 +22,13 @@
  *   → lifecycle_events.before_state에 변경 전 스냅샷을 저장.
  *   → 되돌리기(history.ts revert) 시 이 스냅샷으로 복구한다.
  *
- * extractLast4 (P10 마이데이터 매칭 대비):
- *   "****1234" 같은 마스킹 문자열에서 숫자만 추출해 뒤 4자리를 저장.
- *   향후 마이데이터 API가 반환하는 계좌 정보와 last4로 매칭할 수 있도록 준비.
+ * last4(마이데이터 매칭 대비) 추출은 mask.ts의 extractLast4 공용 util 사용.
  */
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { supabaseAdmin } from '../db.js';
 import { insertLifecycleEvent, type ReasonCode } from '../services/lifecycle.js';
+import { extractLast4 } from '../mask.js';
 
 const CreateBody = z.object({
   institution_name: z.string().min(1).max(60),
@@ -41,14 +40,6 @@ const CreateBody = z.object({
 });
 
 const UpdateBody = CreateBody.partial();
-
-// P10: 마스킹 문자열에서 last4 자동 추출
-// 마이데이터 연동 시 계좌를 매칭하기 위해 last4를 별도 컬럼에 저장한다.
-function extractLast4(masked?: string): string | null {
-  if (!masked) return null;
-  const digits = masked.replace(/\D/g, '');
-  return digits.length >= 4 ? digits.slice(-4) : null;
-}
 
 export const accountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/accounts', async (req) => {

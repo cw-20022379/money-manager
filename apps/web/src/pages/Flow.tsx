@@ -21,6 +21,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { krw, krwShort } from '../lib/format.js';
 import { CATEGORY_LABEL, CATEGORY_COLOR } from '@ffn/shared';
+import { SegmentTab as Seg } from '../components/SegmentTab.js';
 import { type GraphData } from '../features/RelationshipGraph.js';
 import { type CalFlow } from '../features/CashflowCalendar.js';
 
@@ -257,16 +258,6 @@ export function Flow() {
   );
 }
 
-function Seg({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`seg-item ${active ? 'seg-item-active' : 'seg-item-inactive'}`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function AccountTree({ node, totalMonthly }: { node: AccountNode; totalMonthly: number }) {
   const [open, setOpen] = useState(true);
