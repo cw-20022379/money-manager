@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 import { CATEGORY_LABEL, type Category } from '@ffn/shared';
 import { ReasonModal, type ReasonResult } from './ReasonModal.js';
+import { buildSuggestions, type LearnableFlow, type Suggestion, PRESET_COUNT } from '../lib/preset-match.js';
 
 interface Account { id: string; nickname: string; institution_name: string }
 interface Card { id: string; product_name: string; issuer_name: string }
@@ -52,6 +53,9 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
   const [err, setErr] = useState('');
   const [similar, setSimilar] = useState<unknown[]>([]);
   const [pendingPatch, setPendingPatch] = useState<Record<string, unknown> | null>(null);
+  const [familyFlows, setFamilyFlows] = useState<LearnableFlow[]>([]);
+  const [showSug, setShowSug] = useState(false);
+  const [appliedFrom, setAppliedFrom] = useState<Suggestion | null>(null);
 
   const isEdit = !!initial;
 
@@ -64,7 +68,29 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
       setCards(r.items);
       if (!isEdit && r.items[0] && !cardId) setCardId(r.items[0].id);
     });
+    // 가족 학습: 신규 등록 시 기존 항목을 자동완성 후보로
+    if (!isEdit) {
+      api<{ items: LearnableFlow[] }>('/api/flows?status=ACTIVE')
+        .then((r) => setFamilyFlows(r.items))
+        .catch(() => setFamilyFlows([]));
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 머천트 자동완성 후보 (편집 시엔 끔 — 이미 등록된 항목 수정이므로)
+  const suggestions = useMemo(
+    () => (isEdit ? [] : buildSuggestions(merchant, familyFlows)),
+    [merchant, familyFlows, isEdit],
+  );
+
+  function applySuggestion(s: Suggestion) {
+    setMerchant(s.name);
+    setCategory(s.category);
+    if (s.amount != null) { setAmount(String(s.amount)); setIsVariable(false); }
+    else { setAmount(''); setIsVariable(true); }
+    if (s.day != null) setDay(String(s.day));
+    setAppliedFrom(s);
+    setShowSug(false);
+  }
 
   // 비슷한 항목 가드 (P3) - 신규 등록 시만
   useEffect(() => {
@@ -203,8 +229,46 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     <>
       <form onSubmit={submit} className="space-y-3 text-sm">
         <Field label="어디로 나가는 돈인가요?">
-          <input required value={merchant} onChange={(e) => setMerchant(e.target.value)}
-            className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+          <div className="relative">
+            <input required value={merchant} autoComplete="off"
+              onChange={(e) => { setMerchant(e.target.value); setShowSug(true); setAppliedFrom(null); }}
+              onFocus={() => setShowSug(true)}
+              onBlur={() => setTimeout(() => setShowSug(false), 120)}
+              placeholder="넷플릭스, 통신비, 학원비…"
+              className="w-full rounded-md border border-line bg-panel2 px-3 py-2" />
+
+            {showSug && suggestions.length > 0 && (
+              <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-md border border-line bg-panel shadow-lg">
+                {suggestions.map((s) => (
+                  <li key={`${s.source}:${s.name}`}>
+                    <button type="button"
+                      onMouseDown={(e) => { e.preventDefault(); applySuggestion(s); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-panel2">
+                      <span className="text-base">{s.icon}</span>
+                      <span className="flex-1 truncate">
+                        {s.name}
+                        <span className="ml-1.5 text-xs text-dim">{CATEGORY_LABEL[s.category]}</span>
+                      </span>
+                      {s.source === 'family'
+                        ? <span className="shrink-0 rounded bg-teal/15 px-1.5 text-[10px] text-teal">이전 등록</span>
+                        : s.amount != null
+                          ? <span className="shrink-0 text-xs text-dim">{s.amount.toLocaleString()}원</span>
+                          : <span className="shrink-0 text-xs text-dim">변동</span>}
+                    </button>
+                  </li>
+                ))}
+                <li className="border-t border-line px-3 py-1.5 text-[11px] text-dim">
+                  프리셋 {PRESET_COUNT}종 · 우리 가족 기록에서 추천
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {appliedFrom && (
+            <p className="mt-1 text-xs text-teal">
+              ✓ {appliedFrom.source === 'family' ? '이전 기록' : '프리셋'}에서 분류·금액·결제일을 채웠어요. 확인 후 저장하세요.
+            </p>
+          )}
         </Field>
 
         {similar.length > 0 && (
