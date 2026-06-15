@@ -24,6 +24,21 @@
     content: '';
   }
 
+  /* ───── 시니어 모드: 전역 확대 + 가독성 ─────
+     zoom으로 레이아웃을 reflow하며 전체를 키운다 (모바일 webkit/blink 지원).
+     추가로 줄간격을 넓혀 노안 가독성을 높인다. */
+  html.senior body {
+    zoom: 1.18;
+    line-height: 1.6;
+  }
+  /* 터치 타깃 최소 높이 확보 */
+  html.senior button,
+  html.senior a,
+  html.senior select,
+  html.senior input {
+    min-height: 2.5rem;
+  }
+
   /* 숫자는 항상 tabular-nums */
   .num {
     font-variant-numeric: tabular-nums;

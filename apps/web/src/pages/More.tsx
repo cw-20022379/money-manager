@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { PushSettings } from '../features/PushSettings.js';
+import { SeniorToggle } from '../features/SeniorToggle.js';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -142,14 +143,15 @@ export function More() {
         }} />
       </div>
 
-      {/* 섹션: 알림 */}
+      {/* 섹션: 환경설정 */}
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold text-dim uppercase tracking-wide px-1">알림</p>
+        <p className="text-[11px] font-semibold text-dim uppercase tracking-wide px-1">환경설정</p>
         <div
-          className="rounded-xl overflow-hidden"
-          style={{ border: '1px solid #e2e8f0', background: '#ffffff' }}
+          className="rounded-xl overflow-hidden divide-y"
+          style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderColor: '#e2e8f0' }}
         >
           <PushSettings />
+          <SeniorToggle />
         </div>
       </div>
 
