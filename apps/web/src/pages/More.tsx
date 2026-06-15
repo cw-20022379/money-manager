@@ -168,6 +168,17 @@ export function More() {
           sub: '멤버 관리 및 초대',
           href: '/members',
         }} />
+        <MenuRow item={{
+          icon: (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2v20M2 12h20" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="12" cy="12" r="9" stroke="#94a3b8" strokeWidth="1.8"/>
+            </svg>
+          ),
+          label: '지출 분담',
+          sub: '남편·아내·공동 부담 집계',
+          href: '/split',
+        }} />
       </div>
 
       {/* 로그아웃 */}

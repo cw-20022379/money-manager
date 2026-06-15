@@ -6,6 +6,7 @@ import { buildSuggestions, type LearnableFlow, type Suggestion, PRESET_COUNT } f
 
 interface Account { id: string; nickname: string; institution_name: string }
 interface Card { id: string; product_name: string; issuer_name: string }
+interface Member { user_id: string; display_name: string; is_me: boolean }
 
 export interface FlowInitial {
   id: string;
@@ -19,6 +20,7 @@ export interface FlowInitial {
   category: Category;
   notes: string | null;
   is_draft: boolean;
+  owner_user_id?: string | null;
 }
 
 interface Props {
@@ -56,6 +58,8 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
   const [familyFlows, setFamilyFlows] = useState<LearnableFlow[]>([]);
   const [showSug, setShowSug] = useState(false);
   const [appliedFrom, setAppliedFrom] = useState<Suggestion | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(initial?.owner_user_id ?? null);
 
   const isEdit = !!initial;
 
@@ -68,6 +72,10 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
       setCards(r.items);
       if (!isEdit && r.items[0] && !cardId) setCardId(r.items[0].id);
     });
+    // 부부 분담: 가족 구성원 목록 (부담자 선택용)
+    api<{ members: Member[] }>('/api/families/members')
+      .then((r) => setMembers(r.members))
+      .catch(() => setMembers([]));
     // 가족 학습: 신규 등록 시 기존 항목을 자동완성 후보로
     if (!isEdit) {
       api<{ items: LearnableFlow[] }>('/api/flows?status=ACTIVE')
@@ -117,6 +125,7 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
     if (category !== initial.category) patch.category = category;
     if ((notes || null) !== initial.notes) patch.notes = notes || null;
     if (isDraft !== initial.is_draft) patch.is_draft = isDraft;
+    if ((ownerUserId ?? null) !== (initial.owner_user_id ?? null)) patch.owner_user_id = ownerUserId;
     const newViaIsCard = via === 'card';
     const wasViaIsCard = !!initial.source_card_id;
     if (newViaIsCard !== wasViaIsCard ||
@@ -155,6 +164,7 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
         amount_krw: !isVariable && amount ? Number(amount.replace(/[^\d]/g, '')) : undefined,
         is_draft: isDraft,
         notes: notes || undefined,
+        owner_user_id: ownerUserId,
       };
       if (via === 'card') body.source_card_id = cardId;
       else body.source_account_id = accountId;
@@ -327,6 +337,20 @@ export function FlowForm({ initial, onDone, onDelete }: Props) {
             {CATS.map((c) => (<option key={c} value={c}>{CATEGORY_LABEL[c]}</option>))}
           </select>
         </Field>
+
+        {members.length >= 2 && (
+          <Field label="누가 부담하나요?">
+            <select value={ownerUserId ?? ''} onChange={(e) => setOwnerUserId(e.target.value || null)}
+              className="w-full rounded-md border border-line bg-panel2 px-3 py-2">
+              <option value="">👫 공동 (똑같이 나눠요)</option>
+              {members.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.display_name}{m.is_me ? ' (나)' : ''} 부담
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <Field label="메모 (선택)">
           <input value={notes} onChange={(e) => setNotes(e.target.value)}
