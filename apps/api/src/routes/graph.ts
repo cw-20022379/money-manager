@@ -143,6 +143,9 @@ export const graphRoutes: FastifyPluginAsync = async (fastify) => {
     // 다음 3일 이내 결제 예정 항목 계산
     // schedule_day를 이번 달 또는 다음 달로 해석 (오늘보다 이미 지났으면 다음 달)
     const today = new Date();
+    // 오늘 자정 기준점. due(해당 날짜 자정)와 같은 자정끼리 빼야 일수가 정확하다.
+    // (today의 시·분을 그대로 쓰면 "오늘 결제"가 due=오늘자정보다 과거가 되어 -1로 빠지는 버그)
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const upcoming = flows
       .filter((f) => !f.is_draft)
       .map((f) => {
@@ -150,8 +153,8 @@ export const graphRoutes: FastifyPluginAsync = async (fastify) => {
         // 오늘 날짜가 schedule_day보다 크면 이미 이번 달은 지났으므로 다음 달로
         const month = today.getDate() > day ? today.getMonth() + 1 : today.getMonth();
         const due = new Date(today.getFullYear(), month, day);
-        // 밀리초 → 일 단위로 환산 (소수점 버림으로 당일 포함)
-        const diffDays = Math.floor((due.getTime() - today.getTime()) / 86_400_000);
+        // 자정끼리의 차이라 정수일. 오늘 결제면 0, 내일이면 1.
+        const diffDays = Math.round((due.getTime() - todayMidnight.getTime()) / 86_400_000);
         return { ...f, due_date: due.toISOString().slice(0, 10), diff_days: diffDays };
       })
       // 오늘(0) ~ 3일 후까지만, 가장 가까운 순으로 정렬, 최대 3건
