@@ -2,7 +2,11 @@ import type { FastifyPluginAsync } from 'fastify';
 import { supabaseAdmin } from '../db.js';
 
 interface Account { id: string; nickname: string; institution_name: string; balance_krw: number | null; owner_user_id: string | null }
-interface Card { id: string; product_name: string; issuer_name: string; billing_account_id: string | null; owner_user_id: string | null }
+interface Card {
+  id: string; product_name: string; issuer_name: string;
+  billing_account_id: string | null; owner_user_id: string | null;
+  payment_due_day: number | null; payment_due_month_offset: number | null;
+}
 interface Flow {
   id: string;
   merchant_name: string;
@@ -35,7 +39,7 @@ export const graphRoutes: FastifyPluginAsync = async (fastify) => {
         .is('deleted_at', null),
       supabaseAdmin
         .from('cards')
-        .select('id, product_name, issuer_name, billing_account_id, owner_user_id')
+        .select('id, product_name, issuer_name, billing_account_id, owner_user_id, payment_due_day, payment_due_month_offset')
         .eq('family_id', familyId)
         .is('deleted_at', null),
       supabaseAdmin

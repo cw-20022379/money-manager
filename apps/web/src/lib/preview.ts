@@ -69,6 +69,7 @@ const GRAPH = {
       cards: [
         {
           id: 'card-1', product_name: 'M카드', issuer_name: '현대카드', monthly_sum: 24_890,
+          payment_due_day: 25, payment_due_month_offset: 1,
           children: [
             { id: 'flow-1', merchant_name: '넷플릭스', category: 'MEDIA',
               amount_krw: 17_000, schedule_day: 5, is_draft: false },
