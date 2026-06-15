@@ -1,0 +1,31 @@
+# Render Blueprint — 백엔드 API 한 번에 배포.
+# 대시보드 New → Blueprint → 이 리포 선택 → 시크릿 envVars(sync:false)만 입력.
+services:
+  - type: web
+    name: family-finance-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: apps/api
+    # corepack으로 pnpm 활성화 후 루트에서 워크스페이스 설치 + api만 빌드
+    buildCommand: corepack enable && cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @ffn/api build
+    startCommand: pnpm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: API_HOST
+        value: 0.0.0.0
+      # 아래는 대시보드에서 직접 입력 (sync:false = Blueprint에 값 안 박힘)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGINS          # 예: https://family-finance.vercel.app
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT          # 예: mailto:you@example.com
+        sync: false
